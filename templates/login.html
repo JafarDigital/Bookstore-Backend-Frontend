@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Вход - Книжарница{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="form-container shadow">
+            <h2 class="text-center mb-4">Вход</h2>
+            
+            <div id="loginError" class="alert alert-danger d-none" role="alert">
+                Невалидно потребителско име или парола
+            </div>
+            
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Потребителско име</label>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">Парола</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="rememberMe" name="rememberMe">
+                    <label class="form-check-label" for="rememberMe">Запомни ме</label>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Вход</button>
+                </div>
+            </form>
+            
+            <!-- 2FA Form (initially hidden) -->
+            <form id="twoFactorForm" class="d-none mt-3">
+                <div class="mb-3">
+                    <label for="twoFactorCode" class="form-label">Двуфакторен код</label>
+                    <input type="text" class="form-control" id="twoFactorCode" name="totp_code" required>
+                    <input type="hidden" id="tempToken" name="token">
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Потвърди</button>
+                </div>
+            </form>
+            
+            <div class="mt-3 text-center">
+                <a href="/forgotten-password">Забравена парола?</a>
+                <hr>
+                <p>Нямате профил? <a href="/register">Регистрирайте се</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginForm = document.getElementById('loginForm');
+        const twoFactorForm = document.getElementById('twoFactorForm');
+        const loginError = document.getElementById('loginError');
+        
+        // Обработчик за формата за вход
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Скриваме съобщението за грешка
+            loginError.classList.add('d-none');
+            
+            // Вземаме данните от формата
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                // Изпращаме заявка към API
+                const response = await fetch('/api/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Грешка при вход');
+                }
+                
+                // Проверяваме дали е необходима 2FA автентикация
+                if (data.detail && data.temporary_token) {
+                    // Показваме формата за 2FA
+                    loginForm.classList.add('d-none');
+                    twoFactorForm.classList.remove('d-none');
+                    
+                    // Запълваме временния токен
+                    document.getElementById('tempToken').value = data.temporary_token;
+                    
+                    // Ако има данни за настройка на 2FA
+                    if (data.two_fa_setup) {
+                        // Тук можете да добавите код за показване на QR код и т.н.
+                        showToast('Настройка на 2FA', 'Моля, сканирайте QR кода с вашето приложение за автентикация', 'info');
+                    }
+                    
+                    return;
+                }
+                
+                // Запазваме токените
+                localStorage.setItem('access_token', data.access_token);
+                
+                if (data.refresh_token) {
+                    localStorage.setItem('refresh_token', data.refresh_token);
+                }
+                
+                loadUserData();
+                
+                // Показваме съобщение за успешен вход
+                showToast('Успешен вход', 'Добре дошли!', 'success');
+                console.log("Token format check:", {
+					length: data.access_token.length,
+					starts_with: data.access_token.substring(0, 10),
+					format: data.access_token.includes('.') ? "Possibly JWT" : "Not JWT format"
+				});
+                
+                const urlParams = new URLSearchParams(window.location.search);
+				const nextUrl = urlParams.get('next') || '/';
+                
+                // Пренасочваме към началната страница или следващата страница
+                setTimeout(() => {
+                    window.location.href = nextUrl;;
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                // Показваме съобщение за грешка
+                loginError.textContent = error.message;
+                loginError.classList.remove('d-none');
+            }
+        });
+        
+        // Обработчик за формата за 2FA
+        twoFactorForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Вземаме данните от формата
+            const token = document.getElementById('tempToken').value;
+            const totpCode = document.getElementById('twoFactorCode').value;
+            
+            try {
+                // Изпращаме заявка към API
+                const response = await fetch('/api/token/verify-2fa', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `token=${encodeURIComponent(token)}&totp_code=${encodeURIComponent(totpCode)}`
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Невалиден код');
+                }
+                
+                // Запазваме токените
+                localStorage.setItem('access_token', data.access_token);
+                
+                if (data.refresh_token) {
+                    localStorage.setItem('refresh_token', data.refresh_token);
+                }
+                
+                // Показваме съобщение за успешен вход
+                showToast('Успешен вход', 'Добре дошли!', 'success');
+                
+                // Пренасочваме към началната страница
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1000);
+                
+            } catch (error) {
+                console.error('2FA error:', error);
+                
+                // Показваме съобщение за грешка
+                loginError.textContent = error.message;
+                loginError.classList.remove('d-none');
+                
+                // Връщаме се към формата за вход
+                twoFactorForm.classList.add('d-none');
+                loginForm.classList.remove('d-none');
+            }
+        });
+    });
+</script>
+{% endblock %}

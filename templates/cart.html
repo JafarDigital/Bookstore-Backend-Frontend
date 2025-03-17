@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Кошница - Книжарница{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Вашата кошница</h2>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Продукти в кошницата</h5>
+            </div>
+            <div class="card-body" id="cartContainer">
+                <div class="alert alert-info">
+                    Зареждане на съдържанието на кошницата...
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-outline-danger" id="clearCartBtn">
+                        <i class="fas fa-trash me-2"></i>Изчисти кошницата
+                    </button>
+                    <button class="btn btn-outline-secondary" id="updateCartBtn">
+                        <i class="fas fa-sync-alt me-2"></i>Обнови кошницата
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card cart-summary" id="cartSummary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Обобщение</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Междинна сума:</span>
+                    <span id="cartSubtotal">0.00 лв.</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Доставка:</span>
+                    <span id="shippingCost">5.00 лв.</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between fw-bold">
+                    <span>Общо:</span>
+                    <span id="cartTotal">0.00 лв.</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="d-grid gap-2">
+                    <a href="/order" class="btn btn-primary">
+                        <i class="fas fa-shopping-bag me-2"></i>Завърши поръчката
+                    </a>
+                    <a href="/search" class="btn btn-outline-primary">
+                        <i class="fas fa-book me-2"></i>Продължи пазаруването
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Промо код</h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Въведете промо код" id="promoCode">
+                    <button class="btn btn-outline-primary" type="button" id="applyPromoBtn">Приложи</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Информация</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><i class="fas fa-truck me-2"></i> Доставка до 3-5 работни дни</p>
+                <p class="mb-1"><i class="fas fa-undo me-2"></i> 14-дневно право на връщане</p>
+                <p class="mb-1"><i class="fas fa-lock me-2"></i> Сигурни плащания</p>
+                <p class="mb-0"><i class="fas fa-phone me-2"></i> Поддръжка: +359 88 888 8888</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модален прозорец за потвърждение на изчистване на кошницата -->
+<div class="modal fade" id="clearCartConfirmModal" tabindex="-1" aria-labelledby="clearCartConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clearCartConfirmModalLabel">Потвърждение</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Сигурни ли сте, че искате да изчистите кошницата? Това действие не може да бъде отменено.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
+                <button type="button" class="btn btn-danger" id="confirmClearCartBtn">Изчисти</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Рендериране на кошницата
+        renderCart();
+        
+        // Обновяване на общата сума
+        updateTotals();
+        
+        // Обработчик за бутона за изчистване на кошницата
+        const clearCartBtn = document.getElementById('clearCartBtn');
+        const confirmClearCartBtn = document.getElementById('confirmClearCartBtn');
+        
+        clearCartBtn.addEventListener('click', function() {
+            // Показване на модалния прозорец за потвърждение
+            const clearCartConfirmModal = new bootstrap.Modal(document.getElementById('clearCartConfirmModal'));
+            clearCartConfirmModal.show();
+        });
+        
+        confirmClearCartBtn.addEventListener('click', function() {
+            // Изчистване на кошницата
+            clearCart();
+            
+            // Скриване на модалния прозорец
+            const clearCartConfirmModal = bootstrap.Modal.getInstance(document.getElementById('clearCartConfirmModal'));
+            clearCartConfirmModal.hide();
+        });
+        
+        // Обработчик за бутона за обновяване на кошницата
+        const updateCartBtn = document.getElementById('updateCartBtn');
+        
+        updateCartBtn.addEventListener('click', function() {
+            // Обновяване на кошницата
+            renderCart();
+            updateTotals();
+            
+            // Показване на съобщение
+            showToast('Успех', 'Кошницата е обновена', 'success');
+        });
+        
+        // Обработчик за бутона за прилагане на промо код
+        const applyPromoBtn = document.getElementById('applyPromoBtn');
+        
+        applyPromoBtn.addEventListener('click', function() {
+            const promoCode = document.getElementById('promoCode').value.trim();
+            
+            if (!promoCode) {
+                showToast('Грешка', 'Моля, въведете промо код', 'error');
+                return;
+            }
+            
+            // Тук трябва да има логика за валидиране и прилагане на промо кода
+            // Тъй като тази функционалност не е имплементирана в API, добавяме само демонстративен код
+            
+            // Примерно валидиране на промо кода
+            if (promoCode.toUpperCase() === 'КНИГА10') {
+                // Прилагане на отстъпка
+                applyDiscount(10);
+                showToast('Успех', 'Промо кодът е приложен успешно! Получихте 10% отстъпка.', 'success');
+            } else {
+                showToast('Грешка', 'Невалиден промо код', 'error');
+            }
+        });
+        
+        // Функция за прилагане на отстъпка
+        function applyDiscount(percentage) {
+            // Прилагане на отстъпка върху междинната сума
+            const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+            const discount = subtotal * (percentage / 100);
+            
+            // Обновяване на общата сума
+            const shipping = subtotal > 0 ? 5.00 : 0;
+            const total = subtotal - discount + shipping;
+            
+            // Добавяне на ред за отстъпката
+            const cartSummary = document.getElementById('cartSummary');
+            const cartBody = cartSummary.querySelector('.card-body');
+            
+            // Проверка дали вече има ред за отстъпка
+            let discountRow = cartBody.querySelector('.discount-row');
+            
+            if (!discountRow) {
+                // Създаване на ред за отстъпката
+                discountRow = document.createElement('div');
+                discountRow.className = 'discount-row d-flex justify-content-between mb-2 text-success';
+                
+                const discountLabel = document.createElement('span');
+                discountLabel.textContent = `Отстъпка (${percentage}%):`;
+                
+                const discountValue = document.createElement('span');
+                discountValue.id = 'discountValue';
+                discountValue.textContent = `-${formatPrice(discount)}`;
+                
+                discountRow.appendChild(discountLabel);
+                discountRow.appendChild(discountValue);
+                
+                // Добавяне на реда преди хоризонталната линия
+                const hr = cartBody.querySelector('hr');
+                cartBody.insertBefore(discountRow, hr);
+            } else {
+                // Обновяване на стойността на отстъпката
+                const discountValue = discountRow.querySelector('#discountValue');
+                discountValue.textContent = `-${formatPrice(discount)}`;
+                
+                // Обновяване на текста на лейбъла
+                const discountLabel = discountRow.querySelector('span:first-child');
+                discountLabel.textContent = `Отстъпка (${percentage}%):`;
+            }
+            
+            // Обновяване на общата сума
+            document.getElementById('cartTotal').textContent = formatPrice(total);
+        }
+        
+        // Функция за рендериране на кошницата
+        function renderCart() {
+            const cartContainer = document.getElementById('cartContainer');
+            
+            if (cart.length === 0) {
+                cartContainer.innerHTML = `
+                    <div class="alert alert-info">
+                        Кошницата е празна. <a href="/search">Разгледайте нашите книги</a>.
+                    </div>
+                `;
+                
+                document.getElementById('clearCartBtn').disabled = true;
+                document.getElementById('updateCartBtn').disabled = true;
+                document.getElementById('cartSummary').classList.add('d-none');
+                return;
+            }
+            
+            let html = '';
+            
+            cart.forEach(item => {
+                const itemTotal = item.price * item.quantity;
+                
+                html += `
+                    <div class="cart-item d-flex flex-wrap align-items-center py-3 border-bottom">
+                <div class="col-md-5 mb-2 mb-md-0">
+                    <h5 class="mb-0"><a href="/books/${item.bookId}" class="text-decoration-none">${item.title}</a></h5>
+                    <div class="text-primary">${formatPrice(item.price)}</div>
+                </div>
+                <div class="col-5 col-md-3 mb-2 mb-md-0">
+                    <div class="input-group input-group-sm" style="max-width: 120px;">
+                        <button class="btn btn-outline-secondary" type="button" onclick="updateCartItemQuantity(${item.bookId}, ${item.quantity - 1})">-</button>
+                        <input type="number" class="form-control text-center" value="${item.quantity}" min="1" onchange="updateCartItemQuantity(${item.bookId}, parseInt(this.value) || 1)">
+                        <button class="btn btn-outline-secondary" type="button" onclick="updateCartItemQuantity(${item.bookId}, ${item.quantity + 1})">+</button>
+                    </div>
+                </div>
+                <div class="col-4 col-md-2 text-end mb-2 mb-md-0">
+                    <span class="fw-bold">${formatPrice(itemTotal)}</span>
+                </div>
+                <div class="col-3 col-md-2 text-end">
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeFromCart(${item.bookId})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+                    <hr>
+                `;
+            });
+            
+            cartContainer.innerHTML = html;
+            
+            document.getElementById('clearCartBtn').disabled = false;
+            document.getElementById('updateCartBtn').disabled = false;
+            document.getElementById('cartSummary').classList.remove('d-none');
+        }
+        
+        // Функция за обновяване на общата сума
+        function updateTotals() {
+            const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+            const shipping = subtotal > 0 ? 5.00 : 0;
+            const total = subtotal + shipping;
+            
+            document.getElementById('cartSubtotal').textContent = formatPrice(subtotal);
+            document.getElementById('shippingCost').textContent = formatPrice(shipping);
+            document.getElementById('cartTotal').textContent = formatPrice(total);
+        }
+    });
+</script>
+{% endblock %}

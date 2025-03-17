@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Търсене на книги | Книжарница{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar с филтри -->
+    <div class="col-md-3 mb-4">
+        <div class="filter-sidebar p-3">
+            <h4>Филтри</h4>
+            <hr>
+            
+            <!-- Филтър по категория -->
+            <div class="mb-3">
+                <label for="categoryFilter" class="form-label">Категория</label>
+                <select class="form-select" id="categoryFilter">
+                    <option value="">Всички категории</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if category_id == category.id|string %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Филтър по цена -->
+            <div class="mb-3">
+                <label class="form-label">Цена</label>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="priceMinFilter" placeholder="От" value="{{ request.query_params.get('min_price', '') }}">
+                            <span class="input-group-text">лв.</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="priceMaxFilter" placeholder="До" value="{{ request.query_params.get('max_price', '') }}">
+                            <span class="input-group-text">лв.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Филтър по наличност -->
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="inStockFilter" {% if request.query_params.get('in_stock') == 'true' %}checked{% endif %}>
+                <label class="form-check-label" for="inStockFilter">Само налични</label>
+            </div>
+            
+            <!-- Сортиране -->
+            <div class="mb-3">
+                <label for="sortByFilter" class="form-label">Сортиране по</label>
+                <select class="form-select" id="sortByFilter">
+                    <option value="title" {% if request.query_params.get('sort_by') == 'title' %}selected{% endif %}>Заглавие</option>
+                    <option value="price" {% if request.query_params.get('sort_by') == 'price' %}selected{% endif %}>Цена</option>
+                    <option value="created_at" {% if request.query_params.get('sort_by') == 'created_at' %}selected{% endif %}>Нови първо</option>
+                    <option value="goodreads_rating" {% if request.query_params.get('sort_by') == 'goodreads_rating' %}selected{% endif %}>Рейтинг</option>
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label for="sortOrderFilter" class="form-label">Ред на сортиране</label>
+                <select class="form-select" id="sortOrderFilter">
+                    <option value="asc" {% if request.query_params.get('sort_desc') != 'true' %}selected{% endif %}>Възходящ</option>
+                    <option value="desc" {% if request.query_params.get('sort_desc') == 'true' %}selected{% endif %}>Низходящ</option>
+                </select>
+            </div>
+            
+            <button type="button" class="btn btn-primary w-100 mt-2" id="applyFilters">Приложи филтри</button>
+            
+            <hr>
+            
+            <a href="/search" class="btn btn-outline-secondary w-100">Изчисти филтрите</a>
+        </div>
+    </div>
+    
+    <!-- Основно съдържание с резултати -->
+    <div class="col-md-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                {% if query %}
+                Резултати от търсене: "{{ query }}"
+                {% elif category_id %}
+                {% for category in categories %}
+                    {% if category.id|string == category_id %}
+                    Категория: {{ category.name }}
+                    {% endif %}
+                {% endfor %}
+                {% else %}
+                Всички книги
+                {% endif %}
+            </h2>
+            <span>{{ books|length }} резултата</span>
+        </div>
+        
+        {% if books %}
+        <div class="row" id="searchResults">
+            {% for book in books %}
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="card h-100">
+                    <div class="position-relative">
+                        <img src="/static/covers/{{ book.isbn|default('book-placeholder') }}.jpg" class="card-img-top" alt="{{ book.title }}" onerror="this.src='/static/book-placeholder.png'">
+                        
+                        {% if book.stock_count == 0 %}
+                        <div class="position-absolute top-0 end-0 bg-danger text-white p-2">
+                            <small>Изчерпана</small>
+                        </div>
+                        {% endif %}
+                        
+                        {% for promotion in book.promotions %}
+                            {% if promotion.start_date <= now and promotion.end_date >= now %}
+                            <div class="position-absolute top-0 start-0 bg-warning text-dark p-2">
+                                <small>-{{ promotion.discount_percentage }}%</small>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ book.title }}</h5>
+                        <p class="card-text text-muted">{{ book.publisher }}</p>
+                        
+                        {% if book.goodreads_rating %}
+                        <div class="rating mb-2">
+                            {% for i in range(1, 6) %}
+                                {% if i <= book.goodreads_rating|int %}
+                                    <i class="fas fa-star"></i>
+                                {% elif i <= book.goodreads_rating|int + 0.5 %}
+                                    <i class="fas fa-star-half-alt"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <small class="text-muted ms-1">{{ book.goodreads_rating|round(1) }}</small>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            {% if book.promotion %}
+                            <div>
+                                <span class="text-decoration-line-through text-muted me-2">{{ book.price }} лв.</span>
+                                <span class="text-danger fw-bold">{{ book.discounted_price|round(2) }} лв.</span>
+                            </div>
+                            {% else %}
+                            <span class="text-primary fw-bold">{{ book.price }} лв.</span>
+                            {% endif %}
+                            
+                            <a href="/books/{{ book.id }}" class="btn btn-sm btn-outline-primary">Детайли</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            Не са намерени книги, отговарящи на критериите за търсене.
+            <a href="/search">Изчистете филтрите</a> и опитайте отново.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Инициализация на библиотеката за пагинация ако има много резултати
+        if (document.getElementById('searchResults') && document.getElementById('searchResults').children.length > 20) {
+            initPagination();
+        }
+    });
+    
+    function initPagination() {
+        const resultsContainer = document.getElementById('searchResults');
+        const items = Array.from(resultsContainer.children);
+        const itemsPerPage = 20;
+        const pageCount = Math.ceil(items.length / itemsPerPage);
+        
+        // Ако имаме само една страница, не правим нищо
+        if (pageCount <= 1) return;
+        
+        // Създаваме контейнер за пагинацията
+        const paginationContainer = document.createElement('div');
+        paginationContainer.className = 'pagination-container mt-4';
+        resultsContainer.parentNode.insertBefore(paginationContainer, resultsContainer.nextSibling);
+        
+        // Създаваме навигацията
+        const pagination = document.createElement('ul');
+        pagination.className = 'pagination justify-content-center';
+        paginationContainer.appendChild(pagination);
+        
+        // Функция за показване на определена страница
+        function showPage(page) {
+            const start = (page - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            
+            items.forEach((item, index) => {
+                item.style.display = (index >= start && index < end) ? '' : 'none';
+            });
+            
+            // Актуализираме активната страница
+            const pageLinks = pagination.querySelectorAll('a.page-link');
+            pageLinks.forEach(link => {
+                link.parentNode.classList.remove('active');
+                if (parseInt(link.dataset.page) === page) {
+                    link.parentNode.classList.add('active');
+                }
+            });
+        }
+        
+        // Създаваме бутоните за страниците
+        for (let i = 1; i <= pageCount; i++) {
+            const li = document.createElement('li');
+            li.className = 'page-item' + (i === 1 ? ' active' : '');
+            
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = '#';
+            a.dataset.page = i;
+            a.textContent = i;
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                showPage(i);
+            });
+            
+            li.appendChild(a);
+            pagination.appendChild(li);
+        }
+        
+        // Показваме първата страница
+        showPage(1);
+    }
+</script>
+{% endblock %}

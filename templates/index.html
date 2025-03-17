@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Книжарница - Начало{% endblock %}
+
+{% block content %}
+<!-- Основен банер -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-dark text-white">
+            <img src="/static/banner.jpg" class="card-img" alt="Банер книжарница" style="height: 300px; object-fit: cover; opacity: 0.5;">
+            <div class="card-img-overlay d-flex flex-column justify-content-center">
+                <h1 class="card-title text-center">Добре дошли в нашата книжарница</h1>
+                <p class="card-text text-center">Открийте света на книгите - вашият портал към знанието и въображението</p>
+                <div class="text-center">
+                    <a href="/search" class="btn btn-primary">Разгледай</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Препоръчани книги -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-4">Най-продавани книги</h2>
+    </div>
+    {% for book in bestsellers %}
+    <div class="col-md-4 col-lg-2 mb-4">
+        <div class="card h-100">
+            <div class="position-relative">
+                <img src="/static/covers/{{ book.isbn|default('book-placeholder') }}.jpg" class="card-img-top" alt="{{ book.title }}" onerror="this.src='/static/book-placeholder.png'">
+                {% if book.stock_count == 0 %}
+                <div class="position-absolute top-0 end-0 bg-danger text-white p-2">
+                    <small>Изчерпана</small>
+                </div>
+                {% endif %}
+                <!-- Проверка за промоции -->
+                {% for promotion in book.promotions %}
+                    {% if promotion.start_date <= now and promotion.end_date >= now %}
+                    <div class="position-absolute top-0 start-0 bg-warning text-dark p-2">
+                        <small>-{{ promotion.discount_percentage }}%</small>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ book.title }}</h5>
+                <p class="card-text text-muted">{{ book.publisher }}</p>
+                <div class="d-flex justify-content-between align-items-center mt-auto">
+                    <span class="text-primary fw-bold">{{ book.price }} лв.</span>
+                    <a href="/books/{{ book.id }}" class="btn btn-sm btn-outline-primary">Детайли</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Нови книги -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-4">Нови заглавия</h2>
+    </div>
+    {% for book in new_books %}
+    <div class="col-md-4 col-lg-2 mb-4">
+        <div class="card h-100">
+            <div class="position-relative">
+                <img src="/static/covers/{{ book.isbn|default('book-placeholder') }}.jpg" class="card-img-top" alt="{{ book.title }}" onerror="this.src='/static/book-placeholder.png'">
+                {% if book.stock_count == 0 %}
+                <div class="position-absolute top-0 end-0 bg-danger text-white p-2">
+                    <small>Изчерпана</small>
+                </div>
+                {% endif %}
+                <!-- Проверка за промоции -->
+                {% for promotion in book.promotions %}
+                    {% if promotion.start_date <= now and promotion.end_date >= now %}
+                    <div class="position-absolute top-0 start-0 bg-warning text-dark p-2">
+                        <small>-{{ promotion.discount_percentage }}%</small>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <div class="card-body d-flex flex-column">
+                <h5 class="card-title">{{ book.title }}</h5>
+                <p class="card-text text-muted">{{ book.publisher }}</p>
+                <div class="d-flex justify-content-between align-items-center mt-auto">
+                    <span class="text-primary fw-bold">{{ book.price }} лв.</span>
+                    <a href="/books/{{ book.id }}" class="btn btn-sm btn-outline-primary">Детайли</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Категории книги -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-4">Категории</h2>
+    </div>
+    <div class="col-12">
+        <div class="row" id="categoriesContainer">
+            <!-- Категориите ще се зареждат динамично чрез JS -->
+            <div class="col-md-3 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Зареждане на категории...</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Зареждане на категориите при зареждане на страницата
+    document.addEventListener('DOMContentLoaded', function() {
+        loadCategories();
+    });
+
+    // Функция за зареждане на категориите
+    function loadCategories() {
+        fetch('/api/categories')
+            .then(response => response.json())
+            .then(categories => {
+                // Зареждане в навигацията
+                const categoriesDropdown = document.getElementById('categoriesDropdown');
+                // Добавяме първия елемент
+                let dropdownHTML = '<li><a class="dropdown-item" href="/search">Всички категории</a></li>';
+                
+                // Добавяме категориите
+                categories.forEach(category => {
+                    dropdownHTML += `<li><a class="dropdown-item" href="/search?category_id=${category.id}">${category.name}</a></li>`;
+                });
+                
+                categoriesDropdown.innerHTML = dropdownHTML;
+                
+                // Зареждане в контейнера за категории
+                const categoriesContainer = document.getElementById('categoriesContainer');
+                let categoriesHTML = '';
+                
+                categories.forEach(category => {
+                    categoriesHTML += `
+                    <div class="col-md-3 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">${category.name}</h5>
+                                <p class="card-text"><small class="text-muted">${category.book_count} книги</small></p>
+                                <a href="/search?category_id=${category.id}" class="btn btn-sm btn-outline-primary">Разгледай</a>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                });
+                
+                categoriesContainer.innerHTML = categoriesHTML;
+            })
+            .catch(error => {
+                console.error('Error loading categories:', error);
+                showToast('Грешка', 'Грешка при зареждане на категориите', 'error');
+            });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Грешка - Книжарница{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="error-container">
+                <div class="error-code mb-4">
+                    <span class="display-1 fw-bold text-danger">{{ status_code }}</span>
+                </div>
+                
+                <h1 class="mb-4 text-secondary">Упс! Нещо се обърка.</h1>
+                
+                <div class="error-details mb-4">
+                    <p class="lead">{{ detail }}</p>
+                    
+                    {% if status_code == 404 %}
+                    <p>Страницата, която търсите, не съществува или е била преместена.</p>
+                    {% elif status_code == 403 %}
+                    <p>Нямате достъп до тази страница.</p>
+                    {% elif status_code == 500 %}
+                    <p>Възникна вътрешна грешка в сървъра. Нашият екип вече работи по отстраняването на проблема.</p>
+                    {% else %}
+                    <p>Възникна неочаквана грешка. Моля, опитайте отново по-късно.</p>
+                    {% endif %}
+                </div>
+                
+                <div class="error-actions">
+                    <a href="/" class="btn btn-primary btn-lg me-2">
+                        <i class="fas fa-home me-2"></i>Начална страница
+                    </a>
+                    <a href="/search" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-search me-2"></i>Търсене на книги
+                    </a>
+                </div>
+            </div>
+            
+            <div class="mt-5">
+                <p>Ако проблемът продължава, моля свържете се с нашия екип за поддръжка на <a href="mailto:support@bookshop.bg">support@bookshop.bg</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

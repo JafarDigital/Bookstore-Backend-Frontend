@@ -1,0 +1,3128 @@
+{% extends "base.html" %}
+
+{% block title %}Админ панел - Книжарница{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-sidebar {
+        background-color: #343a40;
+        min-height: calc(100vh - 100px);
+    }
+    
+    .admin-sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.75);
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+    }
+    
+    .admin-sidebar .nav-link:hover, 
+    .admin-sidebar .nav-link.active {
+        color: #fff;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .admin-sidebar .nav-link i {
+        margin-right: 0.5rem;
+    }
+    
+    .admin-panel {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 0.25rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .stats-card {
+        background-color: #fff;
+        border-radius: 0.25rem;
+        padding: 1rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        margin-bottom: 1rem;
+    }
+    
+    .stats-card .icon {
+        font-size: 2rem;
+        color: #6c757d;
+    }
+    
+    .stats-card .number {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .stats-card .title {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .tab-pane {
+        padding-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-0">
+    <!-- Sidebar -->
+    <div class="col-md-3 col-lg-2 admin-sidebar py-3">
+        <div class="d-flex flex-column">
+            <div class="p-3 text-white">
+                <h5>Админ панел</h5>
+                <p class="mb-0"><small>Добре дошли, {{ user.username }}</small></p>
+            </div>
+            
+            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                <a class="nav-link active" id="v-pills-dashboard-tab" data-bs-toggle="pill" href="#v-pills-dashboard" role="tab">
+                    <i class="fas fa-tachometer-alt"></i> Табло
+                </a>
+                <a class="nav-link" id="v-pills-orders-tab" data-bs-toggle="pill" href="#v-pills-orders" role="tab">
+                    <i class="fas fa-shopping-bag"></i> Поръчки
+                </a>
+                <a class="nav-link" id="v-pills-books-tab" data-bs-toggle="pill" href="#v-pills-books" role="tab">
+                    <i class="fas fa-book"></i> Книги
+                </a>
+                <a class="nav-link" id="v-pills-categories-tab" data-bs-toggle="pill" href="#v-pills-categories" role="tab">
+                    <i class="fas fa-tag"></i> Категории
+                </a>
+                <a class="nav-link" id="v-pills-promotions-tab" data-bs-toggle="pill" href="#v-pills-promotions" role="tab">
+                    <i class="fas fa-percent"></i> Промоции
+                </a>
+                {% if is_admin %}
+                <a class="nav-link" id="v-pills-users-tab" data-bs-toggle="pill" href="#v-pills-users" role="tab">
+                    <i class="fas fa-users"></i> Потребители
+                </a>
+                <a class="nav-link" id="v-pills-reports-tab" data-bs-toggle="pill" href="#v-pills-reports" role="tab">
+                    <i class="fas fa-chart-bar"></i> Отчети
+                </a>
+                {% endif %}
+                <a class="nav-link" id="v-pills-settings-tab" data-bs-toggle="pill" href="#v-pills-settings" role="tab">
+                    <i class="fas fa-cog"></i> Настройки
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9 col-lg-10 py-3">
+        <div class="tab-content" id="v-pills-tabContent">
+            <!-- Dashboard Tab -->
+            <div class="tab-pane fade show active" id="v-pills-dashboard" role="tabpanel">
+                <h3 class="mb-4">Табло</h3>
+                
+                <!-- Stats Cards -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="number" id="totalOrdersCount">--</div>
+                                    <div class="title">Поръчки</div>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="number" id="totalBooksCount">--</div>
+                                    <div class="title">Книги</div>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="number" id="totalUsersCount">--</div>
+                                    <div class="title">Потребители</div>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="stats-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="number" id="totalRevenueCount">--</div>
+                                    <div class="title">Приходи (лв.)</div>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-money-bill-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="admin-panel">
+                            <h5 class="mb-3">Последни поръчки</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Дата</th>
+                                            <th>Клиент</th>
+                                            <th>Статус</th>
+                                            <th>Сума</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recentOrdersTable">
+                                        <tr>
+                                            <td colspan="5" class="text-center">Зареждане...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-end">
+                                <a href="#v-pills-orders" class="btn btn-sm btn-outline-primary" data-bs-toggle="pill" data-bs-target="#v-pills-orders">Виж всички</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="admin-panel">
+                            <h5 class="mb-3">Най-продавани книги</h5>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Заглавие</th>
+                                            <th>Цена</th>
+                                            <th>Продажби</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="topSellingBooksTable">
+                                        <tr>
+                                            <td colspan="4" class="text-center">Зареждане...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-end">
+                                <a href="#v-pills-books" class="btn btn-sm btn-outline-primary" data-bs-toggle="pill" data-bs-target="#v-pills-books">Виж всички</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Orders Tab -->
+            <div class="tab-pane fade" id="v-pills-orders" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Поръчки</h3>
+                    <div class="d-flex">
+                        <div class="input-group me-2">
+                            <input type="text" class="form-control" placeholder="Търсене..." id="orderSearchInput">
+                            <button class="btn btn-outline-secondary" type="button" id="orderSearchBtn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <select class="form-select" id="orderStatusFilter">
+                            <option value="">Всички статуси</option>
+                            <option value="pending">Чакащи</option>
+                            <option value="confirmed">Потвърдени</option>
+                            <option value="shipped">Изпратени</option>
+                            <option value="delivered">Доставени</option>
+                            <option value="cancelled">Отказани</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="admin-panel">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Дата</th>
+                                    <th>Клиент</th>
+                                    <th>Статус</th>
+                                    <th>Артикули</th>
+                                    <th>Сума</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTable">
+                                <tr>
+                                    <td colspan="7" class="text-center">Зареждане...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="ordersPagination" class="mt-3 d-flex justify-content-center">
+                        <!-- Пагинацията ще се генерира динамично -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Books Tab -->
+            <div class="tab-pane fade" id="v-pills-books" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Книги</h3>
+                    <div class="d-flex">
+                        <div class="input-group me-2">
+                            <input type="text" class="form-control" placeholder="Търсене..." id="bookSearchInput">
+                            <button class="btn btn-outline-secondary" type="button" id="bookSearchBtn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBookModal">
+                            <i class="fas fa-plus"></i> Добави книга
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="admin-panel">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Заглавие</th>
+                                    <th>Автор</th>
+                                    <th>ISBN</th>
+                                    <th>Цена</th>
+                                    <th>Наличност</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="booksTable">
+                                <tr>
+                                    <td colspan="7" class="text-center">Зареждане...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="booksPagination" class="mt-3 d-flex justify-content-center">
+                        <!-- Пагинацията ще се генерира динамично -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Categories Tab -->
+            <div class="tab-pane fade" id="v-pills-categories" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Категории</h3>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                        <i class="fas fa-plus"></i> Добави категория
+                    </button>
+                </div>
+                
+                <div class="admin-panel">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Име</th>
+                                    <th>Описание</th>
+                                    <th>Подкатегории</th>
+                                    <th>Книги</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesTable">
+                                <tr>
+                                    <td colspan="6" class="text-center">Зареждане...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Promotions Tab -->
+            <div class="tab-pane fade" id="v-pills-promotions" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Промоции</h3>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPromotionModal">
+                        <i class="fas fa-plus"></i> Добави промоция
+                    </button>
+                </div>
+                
+                <div class="admin-panel">
+                    <ul class="nav nav-tabs" id="promotionsTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="active-promotions-tab" data-bs-toggle="tab" data-bs-target="#active-promotions" type="button" role="tab">Активни</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="upcoming-promotions-tab" data-bs-toggle="tab" data-bs-target="#upcoming-promotions" type="button" role="tab">Предстоящи</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="past-promotions-tab" data-bs-toggle="tab" data-bs-target="#past-promotions" type="button" role="tab">Изтекли</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content mt-3" id="promotionsTabContent">
+                        <div class="tab-pane fade show active" id="active-promotions" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Книга</th>
+                                            <th>Отстъпка</th>
+                                            <th>Начало</th>
+                                            <th>Край</th>
+                                            <th>Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="activePromotionsTable">
+                                        <tr>
+                                            <td colspan="6" class="text-center">Зареждане...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="upcoming-promotions" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Книга</th>
+                                            <th>Отстъпка</th>
+                                            <th>Начало</th>
+                                            <th>Край</th>
+                                            <th>Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="upcomingPromotionsTable">
+                                        <tr>
+                                            <td colspan="6" class="text-center">Зареждане...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="past-promotions" role="tabpanel">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Книга</th>
+                                            <th>Отстъпка</th>
+                                            <th>Начало</th>
+                                            <th>Край</th>
+                                            <th>Действия</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pastPromotionsTable">
+                                        <tr>
+                                            <td colspan="6" class="text-center">Зареждане...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Users Tab (Only for Admins) -->
+            {% if is_admin %}
+            <div class="tab-pane fade" id="v-pills-users" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Потребители</h3>
+                    <div class="input-group w-25">
+                        <input type="text" class="form-control" placeholder="Търсене..." id="userSearchInput">
+                        <button class="btn btn-outline-secondary" type="button" id="userSearchBtn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="admin-panel">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Потребителско име</th>
+                                    <th>Имейл</th>
+                                    <th>Роля</th>
+                                    <th>Регистриран на</th>
+                                    <th>Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <tr>
+                                    <td colspan="7" class="text-center">Зареждане...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="usersPagination" class="mt-3 d-flex justify-content-center">
+                        <!-- Пагинацията ще се генерира динамично -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports Tab (Only for Admins) -->
+            <div class="tab-pane fade" id="v-pills-reports" role="tabpanel">
+                <h3 class="mb-4">Отчети</h3>
+                
+                <div class="admin-panel mb-4">
+                    <h5 class="mb-3">Генериране на отчети</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="reportType" class="form-label">Тип отчет</label>
+                                <select class="form-select" id="reportType">
+                                    <option value="sales">Продажби</option>
+                                    <option value="revenue">Приходи</option>
+                                    <option value="books">Книги</option>
+                                    <option value="users">Потребители</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="reportPeriod" class="form-label">Период</label>
+                                <select class="form-select" id="reportPeriod">
+                                    <option value="day">Ден</option>
+                                    <option value="week">Седмица</option>
+                                    <option value="month" selected>Месец</option>
+                                    <option value="year">Година</option>
+                                    <option value="custom">По избор</option>
+                                </select>
+                            </div>
+                            <div class="row" id="customDateRange" style="display: none;">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="startDate" class="form-label">От дата</label>
+                                        <input type="date" class="form-control" id="startDate">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="endDate" class="form-label">До дата</label>
+                                        <input type="date" class="form-control" id="endDate">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-grid">
+                                <button class="btn btn-primary" id="generateReportBtn">Генерирай отчет</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="reportFormat" class="form-label">Формат на отчета</label>
+                                <select class="form-select" id="reportFormat">
+                                    <option value="html">HTML</option>
+                                    <option value="pdf">PDF</option>
+                                    <option value="excel">Excel</option>
+                                    <option value="csv">CSV</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="reportDetails" class="form-label">Ниво на детайлност</label>
+                                <select class="form-select" id="reportDetails">
+                                    <option value="summary">Обобщено</option>
+                                    <option value="detailed">Детайлно</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeCharts" checked>
+                                    <label class="form-check-label" for="includeCharts">
+                                        Включи графики
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="admin-panel">
+                    <h5 class="mb-3">Последни отчети</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Тип</th>
+                                    <th>Период</th>
+                                    <th>Формат</th>
+                                    <th>Създаден от</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTable">
+                                <tr>
+                                    <td colspan="6" class="text-center">Няма налични отчети</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Settings Tab -->
+            <div class="tab-pane fade" id="v-pills-settings" role="tabpanel">
+                <h3 class="mb-4">Настройки</h3>
+                
+                <div class="admin-panel">
+                    <ul class="nav nav-tabs" id="settingsTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="account-settings-tab" data-bs-toggle="tab" data-bs-target="#account-settings" type="button" role="tab">Акаунт</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="security-settings-tab" data-bs-toggle="tab" data-bs-target="#security-settings" type="button" role="tab">Сигурност</button>
+                        </li>
+                        {% if is_admin %}
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="site-settings-tab" data-bs-toggle="tab" data-bs-target="#site-settings" type="button" role="tab">Сайт</button>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    <div class="tab-content mt-3" id="settingsTabContent">
+                        <div class="tab-pane fade show active" id="account-settings" role="tabpanel">
+                            <h5 class="mb-3">Редактиране на профил</h5>
+                            <form id="updateProfileForm">
+                                <div class="mb-3">
+                                    <label for="profileUsername" class="form-label">Потребителско име</label>
+                                    <input type="text" class="form-control" id="profileUsername" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="profileEmail" class="form-label">Имейл</label>
+                                    <input type="email" class="form-control" id="profileEmail">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="profileFullName" class="form-label">Пълно име</label>
+                                    <input type="text" class="form-control" id="profileFullName">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="profilePhone" class="form-label">Телефон</label>
+                                    <input type="tel" class="form-control" id="profilePhone">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Запази промените</button>
+                            </form>
+                        </div>
+                        <div class="tab-pane fade" id="security-settings" role="tabpanel">
+                            <h5 class="mb-3">Промяна на парола</h5>
+                            <form id="changePasswordForm">
+                                <div class="mb-3">
+                                    <label for="currentPassword" class="form-label">Текуща парола</label>
+                                    <input type="password" class="form-control" id="currentPassword" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newPassword" class="form-label">Нова парола</label>
+                                    <input type="password" class="form-control" id="newPassword" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirmNewPassword" class="form-label">Потвърди нова парола</label>
+                                    <input type="password" class="form-control" id="confirmNewPassword" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Промени паролата</button>
+                            </form>
+                            
+                            <hr class="my-4">
+                            
+                            <h5 class="mb-3">Двуфакторна автентикация</h5>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="enable2fa">
+                                    <label class="form-check-label" for="enable2fa">Активирай двуфакторна автентикация</label>
+                                </div>
+                                <div class="form-text">Увеличете сигурността на вашия акаунт с двуфакторна автентикация.</div>
+                            </div>
+                            
+                            <div id="twoFactorSetup" style="display: none;">
+                                <div class="alert alert-info mb-3">
+                                    <p>Следвайте тези стъпки за настройка на двуфакторна автентикация:</p>
+                                    <ol>
+                                        <li>Сканирайте QR кода с приложение за автентикация (Google Authenticator, Microsoft Authenticator и др.)</li>
+                                        <li>Въведете кода, генериран от приложението, за да потвърдите настройката</li>
+                                    </ol>
+                                </div>
+                                
+                                <div class="text-center mb-3" id="qrCodeContainer">
+                                    <!-- QR кодът ще бъде показан тук -->
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="twoFactorCode" class="form-label">Код за потвърждение</label>
+                                    <input type="text" class="form-control" id="twoFactorCode">
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-primary" id="verifyTwoFactorBtn">Потвърди</button>
+                                    <button type="button" class="btn btn-outline-secondary" id="cancelTwoFactorBtn">Отказ</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if is_admin %}
+                        <div class="tab-pane fade" id="site-settings" role="tabpanel">
+                            <h5 class="mb-3">Общи настройки на сайта</h5>
+                            <form id="siteSettingsForm">
+                                <div class="mb-3">
+                                    <label for="siteName" class="form-label">Име на сайта</label>
+                                    <input type="text" class="form-control" id="siteName" value="Книжарница">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="siteDescription" class="form-label">Описание на сайта</label>
+                                    <textarea class="form-control" id="siteDescription" rows="3">Онлайн книжарница с богат избор от книги.</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="contactEmail" class="form-label">Имейл за контакт</label>
+                                    <input type="email" class="form-control" id="contactEmail" value="info@bookshop.bg">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="contactPhone" class="form-label">Телефон за контакт</label>
+                                    <input type="tel" class="form-control" id="contactPhone" value="+359 88 888 8888">
+                                </div>
+                                
+                                <hr class="my-4">
+                                
+                                <h5 class="mb-3">Настройки за доставка</h5>
+                                <div class="mb-3">
+                                    <label for="shippingFee" class="form-label">Такса за доставка (лв.)</label>
+                                    <input type="number" class="form-control" id="shippingFee" value="5.00" step="0.01">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="freeShippingThreshold" class="form-label">Праг за безплатна доставка (лв.)</label>
+                                    <input type="number" class="form-control" id="freeShippingThreshold" value="50.00" step="0.01">
+                                </div>
+                                
+                                <hr class="my-4">
+                                
+                                <h5 class="mb-3">Интеграции</h5>
+                                <div class="mb-3">
+                                    <label for="analyticsCode" class="form-label">Код за Google Analytics</label>
+                                    <textarea class="form-control" id="analyticsCode" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="facebookPixel" class="form-label">Facebook Pixel</label>
+                                    <textarea class="form-control" id="facebookPixel" rows="3"></textarea>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">Запази настройките</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модални прозорци -->
+
+<!-- Модален прозорец за добавяне на книга -->
+<div class="modal fade" id="addBookModal" tabindex="-1" aria-labelledby="addBookModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBookModalLabel">Добавяне на нова книга</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addBookForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookTitle" class="form-label">Заглавие</label>
+                                <input type="text" class="form-control" id="bookTitle" name="title" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookOriginalTitle" class="form-label">Оригинално заглавие</label>
+                                <input type="text" class="form-control" id="bookOriginalTitle" name="original_title">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookPublisher" class="form-label">Издателство</label>
+                                <input type="text" class="form-control" id="bookPublisher" name="publisher" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookTranslator" class="form-label">Преводач</label>
+                                <input type="text" class="form-control" id="bookTranslator" name="translator">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="bookPages" class="form-label">Брой страници</label>
+                                <input type="number" class="form-control" id="bookPages" name="pages">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="bookPrice" class="form-label">Цена</label>
+                                <input type="number" class="form-control" id="bookPrice" name="price" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="bookCoverType" class="form-label">Тип корица</label>
+                                <select class="form-select" id="bookCoverType" name="cover_type">
+                                    <option value="hardcover">Твърда</option>
+                                    <option value="paperback">Мека</option>
+                                    <option value="ebook">Електронна</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="bookLanguage" class="form-label">Език</label>
+                                <input type="text" class="form-control" id="bookLanguage" name="language" value="Български">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="bookWeight" class="form-label">Тегло (г)</label>
+                                <input type="number" class="form-control" id="bookWeight" name="weight">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="bookDimensions" class="form-label">Размери</label>
+                                <input type="text" class="form-control" id="bookDimensions" name="dimensions" placeholder="напр. 210x148x15 мм">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookISBN" class="form-label">ISBN</label>
+                                <input type="text" class="form-control" id="bookISBN" name="isbn" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="bookStock" class="form-label">Наличност</label>
+                                <input type="number" class="form-control" id="bookStock" name="stock_count" value="0" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="bookCategories" class="form-label">Категории</label>
+                        <select class="form-select" id="bookCategories" name="category_ids" multiple>
+                            <!-- Категориите ще бъдат заредени динамично -->
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="bookDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="bookDescription" name="description" rows="5"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
+                <button type="button" class="btn btn-primary" id="saveBookBtn">Запази</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модален прозорец за добавяне на категория -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCategoryModalLabel">Добавяне на нова категория</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCategoryForm">
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label">Име</label>
+                        <input type="text" class="form-control" id="categoryName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="categoryDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryParent" class="form-label">Родителска категория (незадължително)</label>
+                        <select class="form-select" id="categoryParent" name="parent_id">
+                            <option value="">Няма</option>
+                            <!-- Категориите ще бъдат заредени динамично -->
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
+                <button type="button" class="btn btn-primary" id="saveCategoryBtn">Запази</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модален прозорец за добавяне на промоция -->
+<div class="modal fade" id="addPromotionModal" tabindex="-1" aria-labelledby="addPromotionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPromotionModalLabel">Добавяне на нова промоция</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addPromotionForm">
+                    <div class="mb-3">
+                        <label for="promotionBook" class="form-label">Книга</label>
+                        <select class="form-select" id="promotionBook" name="book_id" required>
+                            <option value="">Изберете книга</option>
+                            <!-- Книгите ще бъдат заредени динамично -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="promotionDiscount" class="form-label">Отстъпка (%)</label>
+                        <input type="number" class="form-control" id="promotionDiscount" name="discount_percentage" min="1" max="99" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="promotionStartDate" class="form-label">Начална дата</label>
+                        <input type="datetime-local" class="form-control" id="promotionStartDate" name="start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="promotionEndDate" class="form-label">Крайна дата</label>
+                        <input type="datetime-local" class="form-control" id="promotionEndDate" name="end_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="promotionDescription" class="form-label">Описание</label>
+                        <textarea class="form-control" id="promotionDescription" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
+                <button type="button" class="btn btn-primary" id="savePromotionBtn">Запази</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модален прозорец за детайли на поръчка -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDetailsModalLabel">Детайли за поръчка</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="orderDetailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Зареждане...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Затвори</button>
+                <div class="btn-group" id="orderActionButtons" style="display: none;">
+                    <button type="button" class="btn btn-primary" id="confirmOrderBtn">Потвърди</button>
+                    <button type="button" class="btn btn-success" id="shipOrderBtn">Изпрати</button>
+                    <button type="button" class="btn btn-info" id="deliverOrderBtn">Доставена</button>
+                    <button type="button" class="btn btn-danger" id="cancelOrderBtn">Откажи</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Асинхронна проверка на правата
+        setTimeout(function() {
+            // Даваме време на loadUserData() да завърши
+            if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) {
+                window.location.href = '/';
+                return;
+            }
+        }, 500);
+            
+        // Зареждане на начални данни
+        loadDashboardData();
+        
+        // Добавяне на обработчици за табовете
+        document.querySelectorAll('#v-pills-tab .nav-link').forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                const tabId = this.getAttribute('href').substring(1);
+                
+                switch(tabId) {
+                    case 'v-pills-orders':
+                        loadOrders();
+                        break;
+                    case 'v-pills-books':
+                        loadBooks();
+                        break;
+                    case 'v-pills-categories':
+                        loadCategories();
+                        break;
+                    case 'v-pills-promotions':
+                        loadPromotions();
+                        break;
+                    case 'v-pills-users':
+                        loadUsers();
+                        break;
+                    case 'v-pills-settings':
+                        loadUserSettings();
+                        break;
+                }
+            });
+        });
+        
+        // Инициализация на модални прозорци и форми
+        initModalHandlers();
+    });
+    
+    // Функция за зареждане на данните за таблото
+    async function loadDashboardData() {
+        try {
+            // Заявка към API за получаване на обобщени данни
+            const response = await fetchWithToken('/api/admin/dashboard');
+            
+            if (!response.ok) {
+                throw new Error('Failed to load dashboard data');
+            }
+            
+            const data = await response.json();
+            
+            // Обновяване на статистиката
+            document.getElementById('totalOrdersCount').textContent = data.orders_count.toLocaleString();
+            document.getElementById('totalBooksCount').textContent = data.books_count.toLocaleString();
+            document.getElementById('totalUsersCount').textContent = data.users_count.toLocaleString();
+            document.getElementById('totalRevenueCount').textContent = data.total_revenue.toLocaleString('bg-BG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            // Зареждане на последни поръчки
+            const recentOrdersTable = document.getElementById('recentOrdersTable');
+            if (data.recent_orders && data.recent_orders.length > 0) {
+                recentOrdersTable.innerHTML = data.recent_orders.map(order => {
+                    let statusClass = '';
+                    switch(order.status) {
+                        case 'pending': statusClass = 'bg-warning'; break;
+                        case 'confirmed': statusClass = 'bg-info'; break;
+                        case 'shipped': statusClass = 'bg-primary'; break;
+                        case 'delivered': statusClass = 'bg-success'; break;
+                        case 'cancelled': statusClass = 'bg-danger'; break;
+                    }
+                    
+                    return `
+                        <tr>
+                            <td>${order.id}</td>
+                            <td>${formatDate(order.created_at)}</td>
+                            <td>${order.customer_name}</td>
+                            <td><span class="badge ${statusClass}">${translateStatus(order.status)}</span></td>
+                            <td>${formatPrice(order.total_price)}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                recentOrdersTable.innerHTML = '<tr><td colspan="5" class="text-center">Няма скорошни поръчки</td></tr>';
+            }
+            
+            // Зареждане на най-продавани книги
+            const topSellingBooksTable = document.getElementById('topSellingBooksTable');
+            if (data.top_selling_books && data.top_selling_books.length > 0) {
+                topSellingBooksTable.innerHTML = data.top_selling_books.map(book => {
+                    return `
+                        <tr>
+                            <td>${book.id}</td>
+                            <td>${book.title}</td>
+                            <td>${formatPrice(book.price)}</td>
+                            <td>${book.sales_count}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                topSellingBooksTable.innerHTML = '<tr><td colspan="4" class="text-center">Няма данни за продажби</td></tr>';
+            }
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            showToast('Грешка', 'Грешка при зареждане на данните за таблото', 'error');
+        }
+    }
+    
+    // Функция за зареждане на поръчки
+    async function loadOrders(page = 1, filters = {}) {
+        try {
+            const ordersTable = document.getElementById('ordersTable');
+            ordersTable.innerHTML = '<tr><td colspan="7" class="text-center">Зареждане...</td></tr>';
+            
+            // Изграждане на URL с филтри
+            let url = `/api/admin/orders?page=${page}&limit=10`;
+            
+            if (filters.status) {
+                url += `&status=${filters.status}`;
+            }
+            
+            if (filters.search) {
+                url += `&search=${encodeURIComponent(filters.search)}`;
+            }
+            
+            const response = await fetchWithToken(url);
+            
+            if (!response.ok) {
+                throw new Error('Failed to load orders');
+            }
+            
+            const data = await response.json();
+            
+            if (data.items && data.items.length > 0) {
+                ordersTable.innerHTML = data.items.map(order => {
+                    let statusClass = '';
+                    switch(order.status) {
+                        case 'pending': statusClass = 'bg-warning'; break;
+                        case 'confirmed': statusClass = 'bg-info'; break;
+                        case 'shipped': statusClass = 'bg-primary'; break;
+                        case 'delivered': statusClass = 'bg-success'; break;
+                        case 'cancelled': statusClass = 'bg-danger'; break;
+                    }
+                    
+                    return `
+                        <tr>
+                            <td>${order.id}</td>
+                            <td>${formatDate(order.created_at)}</td>
+                            <td>${order.customer_name}</td>
+                            <td><span class="badge ${statusClass}">${translateStatus(order.status)}</span></td>
+                            <td>${order.items_count}</td>
+                            <td>${formatPrice(order.total_price)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary view-order-btn" data-order-id="${order.id}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                // Добавяне на обработчици за бутоните
+                document.querySelectorAll('.view-order-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const orderId = btn.getAttribute('data-order-id');
+                        viewOrderDetails(orderId);
+                    });
+                });
+                
+                // Създаване на пагинация
+                createPagination('ordersPagination', data.total, data.page, data.pages, page => loadOrders(page, filters));
+            } else {
+                ordersTable.innerHTML = '<tr><td colspan="7" class="text-center">Няма намерени поръчки</td></tr>';
+                document.getElementById('ordersPagination').innerHTML = '';
+            }
+        } catch (error) {
+            console.error('Error loading orders:', error);
+            document.getElementById('ordersTable').innerHTML = '<tr><td colspan="7" class="text-center text-danger">Грешка при зареждане на поръчките</td></tr>';
+            showToast('Грешка', 'Грешка при зареждане на поръчките', 'error');
+        }
+    }
+    
+    // Функция за зареждане на книги
+    async function loadBooks(page = 1, search = '') {
+        try {
+            const booksTable = document.getElementById('booksTable');
+            booksTable.innerHTML = '<tr><td colspan="7" class="text-center">Зареждане...</td></tr>';
+            
+            let url = `/api/admin/books?page=${page}&limit=10`;
+            
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+            
+            const response = await fetchWithToken(url);
+            
+            if (!response.ok) {
+                throw new Error('Failed to load books');
+            }
+            
+            const data = await response.json();
+            
+            if (data.items && data.items.length > 0) {
+                booksTable.innerHTML = data.items.map(book => {
+                    return `
+                        <tr>
+                            <td>${book.id}</td>
+                            <td>${book.title}</td>
+                            <td>${book.publisher || '-'}</td>
+                            <td>${book.isbn}</td>
+                            <td>${formatPrice(book.price)}</td>
+                            <td>${book.stock_count}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary edit-book-btn" data-book-id="${book.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-book-btn" data-book-id="${book.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                // Добавяне на обработчици за бутоните
+                document.querySelectorAll('.edit-book-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const bookId = btn.getAttribute('data-book-id');
+                        editBook(bookId);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-book-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const bookId = btn.getAttribute('data-book-id');
+                        deleteBook(bookId);
+                    });
+                });
+                
+                // Създаване на пагинация
+                createPagination('booksPagination', data.total, data.page, data.pages, page => loadBooks(page, search));
+            } else {
+                booksTable.innerHTML = '<tr><td colspan="7" class="text-center">Няма намерени книги</td></tr>';
+                document.getElementById('booksPagination').innerHTML = '';
+            }
+            
+            // Зареждане на категории за филтъра в модалния прозорец
+            loadCategoriesForSelect();
+        } catch (error) {
+            console.error('Error loading books:', error);
+            document.getElementById('booksTable').innerHTML = '<tr><td colspan="7" class="text-center text-danger">Грешка при зареждане на книгите</td></tr>';
+            showToast('Грешка', 'Грешка при зареждане на книгите', 'error');
+        }
+    }
+    
+    // Функция за зареждане на категории
+    async function loadCategories() {
+        try {
+            const categoriesTable = document.getElementById('categoriesTable');
+            categoriesTable.innerHTML = '<tr><td colspan="6" class="text-center">Зареждане...</td></tr>';
+            
+            const response = await fetchWithToken('/api/admin/categories');
+            
+            if (!response.ok) {
+                throw new Error('Failed to load categories');
+            }
+            
+            const data = await response.json();
+            
+            if (data && data.length > 0) {
+                categoriesTable.innerHTML = data.map(category => {
+                    return `
+                        <tr>
+                            <td>${category.id}</td>
+                            <td>${category.name}</td>
+                            <td>${category.description || '-'}</td>
+                            <td>${category.subcategories_count}</td>
+                            <td>${category.books_count}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary edit-category-btn" data-category-id="${category.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-category-btn" data-category-id="${category.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                // Добавяне на обработчици за бутоните
+                document.querySelectorAll('.edit-category-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const categoryId = btn.getAttribute('data-category-id');
+                        editCategory(categoryId);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-category-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const categoryId = btn.getAttribute('data-category-id');
+                        deleteCategory(categoryId);
+                    });
+                });
+            } else {
+                categoriesTable.innerHTML = '<tr><td colspan="6" class="text-center">Няма намерени категории</td></tr>';
+            }
+            
+            // Обновяване на селект полетата за родителски категории
+            updateCategorySelects(data);
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            document.getElementById('categoriesTable').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Грешка при зареждане на категориите</td></tr>';
+            showToast('Грешка', 'Грешка при зареждане на категориите', 'error');
+        }
+    }
+    
+    // Функция за зареждане на промоции
+    async function loadPromotions() {
+        try {
+            // Зареждане на активни промоции
+            const activePromotionsTable = document.getElementById('activePromotionsTable');
+            activePromotionsTable.innerHTML = '<tr><td colspan="6" class="text-center">Зареждане...</td></tr>';
+            
+            const responseActive = await fetchWithToken('/api/admin/promotions/active');
+            
+            if (!responseActive.ok) {
+                throw new Error('Failed to load active promotions');
+            }
+            
+            const activePromotions = await responseActive.json();
+            
+            if (activePromotions && activePromotions.length > 0) {
+                activePromotionsTable.innerHTML = activePromotions.map(promo => {
+                    return `
+                        <tr>
+                            <td>${promo.id}</td>
+                            <td>${promo.book_title}</td>
+                            <td>${promo.discount_percentage}%</td>
+                            <td>${formatDate(promo.start_date)}</td>
+                            <td>${formatDate(promo.end_date)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary edit-promotion-btn" data-promotion-id="${promo.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-promotion-btn" data-promotion-id="${promo.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                activePromotionsTable.innerHTML = '<tr><td colspan="6" class="text-center">Няма активни промоции</td></tr>';
+            }
+            
+            // Зареждане на предстоящи промоции
+            const upcomingPromotionsTable = document.getElementById('upcomingPromotionsTable');
+            upcomingPromotionsTable.innerHTML = '<tr><td colspan="6" class="text-center">Зареждане...</td></tr>';
+            
+            const responseUpcoming = await fetchWithToken('/api/admin/promotions/upcoming');
+            
+            if (!responseUpcoming.ok) {
+                throw new Error('Failed to load upcoming promotions');
+            }
+            
+            const upcomingPromotions = await responseUpcoming.json();
+            
+            if (upcomingPromotions && upcomingPromotions.length > 0) {
+                upcomingPromotionsTable.innerHTML = upcomingPromotions.map(promo => {
+                    return `
+                        <tr>
+                            <td>${promo.id}</td>
+                            <td>${promo.book_title}</td>
+                            <td>${promo.discount_percentage}%</td>
+                            <td>${formatDate(promo.start_date)}</td>
+                            <td>${formatDate(promo.end_date)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary edit-promotion-btn" data-promotion-id="${promo.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-promotion-btn" data-promotion-id="${promo.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                upcomingPromotionsTable.innerHTML = '<tr><td colspan="6" class="text-center">Няма предстоящи промоции</td></tr>';
+            }
+            
+            // Зареждане на изтекли промоции
+            const pastPromotionsTable = document.getElementById('pastPromotionsTable');
+            pastPromotionsTable.innerHTML = '<tr><td colspan="6" class="text-center">Зареждане...</td></tr>';
+            
+            const responsePast = await fetchWithToken('/api/admin/promotions/past');
+            
+            if (!responsePast.ok) {
+                throw new Error('Failed to load past promotions');
+            }
+            
+            const pastPromotions = await responsePast.json();
+            
+            if (pastPromotions && pastPromotions.length > 0) {
+                pastPromotionsTable.innerHTML = pastPromotions.map(promo => {
+                    return `
+                        <tr>
+                            <td>${promo.id}</td>
+                            <td>${promo.book_title}</td>
+                            <td>${promo.discount_percentage}%</td>
+                            <td>${formatDate(promo.start_date)}</td>
+                            <td>${formatDate(promo.end_date)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger delete-promotion-btn" data-promotion-id="${promo.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } else {
+                pastPromotionsTable.innerHTML = '<tr><td colspan="6" class="text-center">Няма изтекли промоции</td></tr>';
+            }
+            
+            // Добавяне на обработчици за бутоните
+            document.querySelectorAll('.edit-promotion-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const promotionId = btn.getAttribute('data-promotion-id');
+                    editPromotion(promotionId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-promotion-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const promotionId = btn.getAttribute('data-promotion-id');
+                    deletePromotion(promotionId);
+                });
+            });
+            
+            // Зареждане на книги за селекта при добавяне на промоция
+            loadBooksForSelect();
+        } catch (error) {
+            console.error('Error loading promotions:', error);
+            document.getElementById('activePromotionsTable').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Грешка при зареждане на промоциите</td></tr>';
+            document.getElementById('upcomingPromotionsTable').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Грешка при зареждане на промоциите</td></tr>';
+            document.getElementById('pastPromotionsTable').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Грешка при зареждане на промоциите</td></tr>';
+            showToast('Грешка', 'Грешка при зареждане на промоциите', 'error');
+        }
+    }
+    
+    // Функция за зареждане на потребители
+    async function loadUsers(page = 1, search = '') {
+        try {
+            const usersTable = document.getElementById('usersTable');
+            usersTable.innerHTML = '<tr><td colspan="7" class="text-center">Зареждане...</td></tr>';
+            
+            let url = `/api/admin/users?page=${page}&limit=10`;
+            
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+            
+            const response = await fetchWithToken(url);
+            
+            if (!response.ok) {
+                throw new Error('Failed to load users');
+            }
+            
+            const data = await response.json();
+            
+            if (data.items && data.items.length > 0) {
+                usersTable.innerHTML = data.items.map(user => {
+                    let statusClass = user.is_active ? 'bg-success' : 'bg-danger';
+                    let statusText = user.is_active ? 'Активен' : 'Блокиран';
+                    
+                    return `
+                        <tr>
+                            <td>${user.id}</td>
+                            <td>${user.username}</td>
+                            <td>${user.email}</td>
+                            <td>${translateUserRole(user.role)}</td>
+                            <td>${formatDate(user.created_at)}</td>
+                            <td><span class="badge ${statusClass}">${statusText}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-primary edit-user-btn" data-user-id="${user.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-${user.is_active ? 'warning' : 'success'} toggle-user-status-btn" data-user-id="${user.id}" data-is-active="${user.is_active}">
+                                    <i class="fas fa-${user.is_active ? 'ban' : 'user-check'}"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                // Добавяне на обработчици за бутоните
+                document.querySelectorAll('.edit-user-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const userId = btn.getAttribute('data-user-id');
+                        editUser(userId);
+                    });
+                });
+                
+                document.querySelectorAll('.toggle-user-status-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const userId = btn.getAttribute('data-user-id');
+                        const isActive = btn.getAttribute('data-is-active') === 'true';
+                        toggleUserStatus(userId, isActive);
+                    });
+                });
+                
+                // Създаване на пагинация
+                createPagination('usersPagination', data.total, data.page, data.pages, page => loadUsers(page, search));
+            } else {
+                usersTable.innerHTML = '<tr><td colspan="7" class="text-center">Няма намерени потребители</td></tr>';
+                document.getElementById('usersPagination').innerHTML = '';
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+            document.getElementById('usersTable').
+			showToast('Грешка', 'Грешка при зареждане на потребителите', 'error');
+		}
+	}
+
+// Helper functions for admin panel
+
+// Функция за филтриране на потребители
+function filterUsers() {
+    const searchQuery = document.getElementById('userSearchInput').value.trim();
+    loadUsers(1, searchQuery);
+}
+
+// Функция за експортиране на потребители
+async function exportUsers(format = 'csv') {
+    try {
+        const searchQuery = document.getElementById('userSearchInput').value.trim();
+        
+        // Конструиране на URL за експорт
+        let url = `/api/admin/users/export?format=${format}`;
+        
+        if (searchQuery) {
+            url += `&search=${encodeURIComponent(searchQuery)}`;
+        }
+        
+        // Извършване на заявката
+        const response = await fetchWithToken(url);
+        
+        if (!response.ok) {
+            throw new Error('Failed to export users');
+        }
+        
+        // Извличане на данните според формата
+        if (format === 'csv' || format === 'excel') {
+            // Изтегляне на файл
+            const blob = await response.blob();
+            const fileName = `users-export-${new Date().toISOString().slice(0, 10)}.${format === 'excel' ? 'xlsx' : 'csv'}`;
+            
+            // Създаване на временен линк и задействане на изтеглянето
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Почистване
+            setTimeout(() => {
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 0);
+            
+            showToast('Успех', `Потребителите са експортирани успешно във формат ${format.toUpperCase()}`, 'success');
+        } else {
+            // Обработка на JSON отговор
+            const data = await response.json();
+            console.log('Exported users data:', data);
+            showToast('Успех', 'Данните за потребителите са получени успешно', 'success');
+        }
+    } catch (error) {
+        console.error('Error exporting users:', error);
+        showToast('Грешка', `Грешка при експортиране на потребителите: ${error.message}`, 'error');
+    }
+}
+
+// Функция за масово действие върху потребители
+async function bulkUserAction(action) {
+    // Получаване на избраните потребители
+    const selectedUsers = Array.from(document.querySelectorAll('input[name="selectedUsers"]:checked'))
+        .map(checkbox => checkbox.value);
+    
+    if (selectedUsers.length === 0) {
+        showToast('Внимание', 'Моля, изберете поне един потребител', 'warning');
+        return;
+    }
+    
+    // Определяне на съобщението за потвърждение според действието
+    let confirmMessage = '';
+    let actionUrl = '';
+    let actionMethod = 'POST';
+    let actionBody = { user_ids: selectedUsers };
+    
+    switch(action) {
+        case 'activate':
+            confirmMessage = 'Сигурни ли сте, че искате да активирате избраните потребители?';
+            actionUrl = '/api/admin/users/bulk-activate';
+            break;
+        case 'deactivate':
+            confirmMessage = 'Сигурни ли сте, че искате да деактивирате избраните потребители?';
+            actionUrl = '/api/admin/users/bulk-deactivate';
+            break;
+        case 'delete':
+            confirmMessage = 'Сигурни ли сте, че искате да изтриете избраните потребители? Това действие не може да бъде отменено!';
+            actionUrl = '/api/admin/users/bulk-delete';
+            actionMethod = 'DELETE';
+            break;
+        case 'make-vip':
+            confirmMessage = 'Сигурни ли сте, че искате да направите избраните потребители VIP?';
+            actionUrl = '/api/admin/users/bulk-make-vip';
+            break;
+        default:
+            showToast('Грешка', 'Невалидно действие', 'error');
+            return;
+    }
+    
+    // Потвърждение от потребителя
+    showConfirmDialog('Потвърждение', confirmMessage, async () => {
+        try {
+            const response = await fetchWithToken(actionUrl, {
+                method: actionMethod,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(actionBody)
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Failed to perform bulk action');
+            }
+            
+            const result = await response.json();
+            
+            // Показване на съобщение за успех
+            showToast('Успех', `Действието е изпълнено успешно за ${result.affected_count} потребители`, 'success');
+            
+            // Презареждане на списъка с потребители
+            loadUsers();
+            
+            // Премахване на всички отметки от чекбоксовете
+            document.getElementById('selectAllUsers').checked = false;
+            
+        } catch (error) {
+            console.error('Error performing bulk action:', error);
+            showToast('Грешка', error.message, 'error');
+        }
+    });
+}
+
+// Функция за превключване на всички чекбоксове за избор на потребители
+function toggleAllUsers() {
+    const selectAllCheckbox = document.getElementById('selectAllUsers');
+    const isChecked = selectAllCheckbox.checked;
+    
+    document.querySelectorAll('input[name="selectedUsers"]').forEach(checkbox => {
+        checkbox.checked = isChecked;
+    });
+}
+
+// Функция за изчисляване на статистики за потребителите
+async function calculateUserStats() {
+    try {
+        const response = await fetchWithToken('/api/admin/users/stats');
+        
+        if (!response.ok) {
+            throw new Error('Failed to load user statistics');
+        }
+        
+        const stats = await response.json();
+        
+        // Актуализиране на UI с получените статистики
+        document.getElementById('totalUsersCount').textContent = stats.total_users.toLocaleString();
+        document.getElementById('activeUsersCount').textContent = stats.active_users.toLocaleString();
+        document.getElementById('vipUsersCount').textContent = stats.vip_users.toLocaleString();
+        document.getElementById('newUsersThisMonth').textContent = stats.new_users_this_month.toLocaleString();
+        
+        // Ако имаме елемент за графика, можем да я визуализираме
+        const userStatsChart = document.getElementById('userStatsChart');
+        if (userStatsChart && stats.registration_by_month) {
+            renderUserStatsChart(userStatsChart, stats.registration_by_month);
+        }
+        
+    } catch (error) {
+        console.error('Error loading user statistics:', error);
+        showToast('Грешка', 'Грешка при зареждане на статистиките за потребителите', 'error');
+    }
+}
+
+// Помощна функция за визуализиране на графика за потребителите
+function renderUserStatsChart(canvas, data) {
+    // Тук би могла да бъде използвана библиотека като Chart.js
+    // Примерна имплементация:
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Извличане на месеци и стойности от данните
+    const months = data.map(item => item.month);
+    const values = data.map(item => item.count);
+    
+    // Създаване на графика (ако вече имате импортирана Chart.js)
+    // Тук е примерен код, който трябва да бъде адаптиран според конкретната библиотека
+    /*
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Нови регистрации',
+                data: values,
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    */
+    
+    // Алтернативно, можете да използвате по-проста визуализация, ако Chart.js не е налична
+    // Това е само примерен код, който рисува проста линейна графика
+    const width = canvas.width;
+    const height = canvas.height;
+    const maxValue = Math.max(...values);
+    const padding = 30;
+    
+    ctx.clearRect(0, 0, width, height);
+    
+    // Рисуване на осите
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.stroke();
+    
+    // Рисуване на линията с данните
+    if (values.length > 0) {
+        const xStep = (width - 2 * padding) / (values.length - 1);
+        const yScale = (height - 2 * padding) / maxValue;
+        
+        ctx.beginPath();
+        ctx.moveTo(padding, height - padding - values[0] * yScale);
+        
+        for (let i = 1; i < values.length; i++) {
+            ctx.lineTo(padding + i * xStep, height - padding - values[i] * yScale);
+        }
+        
+        ctx.strokeStyle = 'rgb(75, 192, 192)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Добавяне на точки за данните
+        for (let i = 0; i < values.length; i++) {
+            ctx.beginPath();
+            ctx.arc(padding + i * xStep, height - padding - values[i] * yScale, 4, 0, 2 * Math.PI);
+            ctx.fillStyle = 'rgb(75, 192, 192)';
+            ctx.fill();
+        }
+        
+        // Добавяне на етикети за месеците
+        ctx.fillStyle = 'black';
+        ctx.textAlign = 'center';
+        for (let i = 0; i < months.length; i++) {
+            ctx.fillText(months[i], padding + i * xStep, height - padding / 2);
+        }
+        
+        // Добавяне на етикети за стойностите
+        ctx.textAlign = 'right';
+        const yStep = (height - 2 * padding) / 5;
+        const valueStep = maxValue / 5;
+        for (let i = 0; i <= 5; i++) {
+            const value = Math.round(i * valueStep);
+            ctx.fillText(value.toString(), padding - 5, height - padding - i * yStep);
+        }
+    }
+}
+
+// Инициализиране на обработчици за модални прозорци
+function initModalHandlers() {
+    // Добавяне на книга
+    document.getElementById('saveBookBtn')?.addEventListener('click', function() {
+        saveBook();
+    });
+    
+    // Добавяне на категория
+    document.getElementById('saveCategoryBtn')?.addEventListener('click', function() {
+        saveCategory();
+    });
+    
+    // Добавяне на промоция
+    document.getElementById('savePromotionBtn')?.addEventListener('click', function() {
+        savePromotion();
+    });
+    
+    // Търсене на поръчки
+    document.getElementById('orderSearchBtn')?.addEventListener('click', function() {
+        const searchQuery = document.getElementById('orderSearchInput').value;
+        const statusFilter = document.getElementById('orderStatusFilter').value;
+        loadOrders(1, { search: searchQuery, status: statusFilter });
+    });
+    
+    // Търсене на книги
+    document.getElementById('bookSearchBtn')?.addEventListener('click', function() {
+        const searchQuery = document.getElementById('bookSearchInput').value;
+        loadBooks(1, searchQuery);
+    });
+    
+    // Търсене на потребители
+    document.getElementById('userSearchBtn')?.addEventListener('click', function() {
+        const searchQuery = document.getElementById('userSearchInput').value;
+        loadUsers(1, searchQuery);
+    });
+    
+    // Обработка на промяна на период при отчетите
+    document.getElementById('reportPeriod')?.addEventListener('change', function() {
+        const customDateRange = document.getElementById('customDateRange');
+        if (this.value === 'custom') {
+            customDateRange.style.display = 'flex';
+        } else {
+            customDateRange.style.display = 'none';
+        }
+    });
+    
+    // Генериране на отчет
+    document.getElementById('generateReportBtn')?.addEventListener('click', function() {
+        generateReport();
+    });
+    
+    // Включване/изключване на двуфакторна автентикация
+    document.getElementById('enable2fa')?.addEventListener('change', function() {
+        const twoFactorSetup = document.getElementById('twoFactorSetup');
+        if (this.checked) {
+            twoFactorSetup.style.display = 'block';
+            setupTwoFactor();
+        } else {
+            twoFactorSetup.style.display = 'none';
+        }
+    });
+    
+    // Обработка на форми за настройки
+    document.getElementById('updateProfileForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        updateProfile();
+    });
+    
+    document.getElementById('changePasswordForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        changePassword();
+    });
+    
+    document.getElementById('siteSettingsForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        updateSiteSettings();
+    });
+
+    // Обновяване на настройките на потребителя
+    loadUserSettings();
+}
+
+// Зареждане на настройки на потребителя
+async function loadUserSettings() {
+    try {
+        const response = await fetchWithToken('/api/users/me');
+        if (!response.ok) {
+            throw new Error('Failed to load user settings');
+        }
+        
+        const userData = await response.json();
+        
+        // Попълване на полетата във формата за профил
+        document.getElementById('profileUsername').value = userData.username;
+        document.getElementById('profileEmail').value = userData.email;
+        document.getElementById('profileFullName').value = userData.full_name || '';
+        document.getElementById('profilePhone').value = userData.phone || '';
+        
+        // Актуализиране на превключвателя за двуфакторна автентикация
+        const enable2fa = document.getElementById('enable2fa');
+        if (enable2fa) {
+            enable2fa.checked = userData.two_factor_enabled || false;
+            document.getElementById('twoFactorSetup').style.display = enable2fa.checked ? 'block' : 'none';
+        }
+    } catch (error) {
+        console.error('Error loading user settings:', error);
+        showToast('Грешка', 'Грешка при зареждане на настройките', 'error');
+    }
+}
+
+// Създаване на пагинация
+function createPagination(containerId, total, currentPage, totalPages, callback) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    let html = '<nav><ul class="pagination">';
+    
+    // Бутон "Предишна"
+    html += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+    `;
+    
+    // Номерирани страници
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        html += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" data-page="${i}">${i}</a>
+            </li>
+        `;
+    }
+    
+    // Бутон "Следваща"
+    html += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    `;
+    
+    html += '</ul></nav>';
+    
+    container.innerHTML = html;
+    
+    // Добавяне на обработчици за бутоните
+    container.querySelectorAll('.page-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const page = parseInt(this.getAttribute('data-page'));
+            if (!isNaN(page) && page > 0 && page <= totalPages) {
+                callback(page);
+            }
+        });
+    });
+}
+
+// Функция за зареждане на категории за селект
+async function loadCategoriesForSelect() {
+    try {
+        const response = await fetchWithToken('/api/categories');
+        
+        if (!response.ok) {
+            throw new Error('Failed to load categories');
+        }
+        
+        const categories = await response.json();
+        
+        // Попълване на селект полето в модалния прозорец за добавяне на книга
+        const categoriesSelect = document.getElementById('bookCategories');
+        if (categoriesSelect) {
+            categoriesSelect.innerHTML = '';
+            
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                categoriesSelect.appendChild(option);
+            });
+        }
+        
+        // Попълване на селект полето в модалния прозорец за добавяне на категория
+        const parentCategorySelect = document.getElementById('categoryParent');
+        if (parentCategorySelect) {
+            parentCategorySelect.innerHTML = '<option value="">Няма</option>';
+            
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                parentCategorySelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading categories for select:', error);
+    }
+}
+
+// Функция за зареждане на книги за селект
+async function loadBooksForSelect() {
+    try {
+        const response = await fetchWithToken('/api/admin/books/list');
+        
+        if (!response.ok) {
+            throw new Error('Failed to load books');
+        }
+        
+        const books = await response.json();
+        
+        // Попълване на селект полето в модалния прозорец за добавяне на промоция
+        const booksSelect = document.getElementById('promotionBook');
+        if (booksSelect) {
+            booksSelect.innerHTML = '<option value="">Изберете книга</option>';
+            
+            books.forEach(book => {
+                const option = document.createElement('option');
+                option.value = book.id;
+                option.textContent = book.title;
+                booksSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading books for select:', error);
+    }
+}
+
+// Функция за запазване на книга
+async function saveBook() {
+    const form = document.getElementById('addBookForm');
+    if (!form) return;
+    
+    const formData = getFormData(form);
+    
+    try {
+        const response = await fetchWithToken('/api/admin/books', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to add book');
+        }
+        
+        const data = await response.json();
+        
+        // Скриване на модалния прозорец
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addBookModal'));
+        modal.hide();
+        
+        // Изчистване на формата
+        form.reset();
+        
+        // Показване на съобщение за успех
+        showToast('Успех', `Книгата "${data.title}" е добавена успешно`, 'success');
+        
+        // Презареждане на списъка с книги
+        loadBooks();
+    } catch (error) {
+        console.error('Error saving book:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за запазване на категория
+async function saveCategory() {
+    const form = document.getElementById('addCategoryForm');
+    if (!form) return;
+    
+    const formData = getFormData(form);
+    
+    try {
+        const response = await fetchWithToken('/api/admin/categories', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to add category');
+        }
+        
+        const data = await response.json();
+        
+        // Скриване на модалния прозорец
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'));
+        modal.hide();
+        
+        // Изчистване на формата
+        form.reset();
+        
+        // Показване на съобщение за успех
+        showToast('Успех', `Категорията "${data.name}" е добавена успешно`, 'success');
+        
+        // Презареждане на списъка с категории
+        loadCategories();
+    } catch (error) {
+        console.error('Error saving category:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за запазване на промоция
+async function savePromotion() {
+    const form = document.getElementById('addPromotionForm');
+    if (!form) return;
+    
+    const formData = getFormData(form);
+    
+    try {
+        const response = await fetchWithToken('/api/admin/promotions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to add promotion');
+        }
+        
+        const data = await response.json();
+        
+        // Скриване на модалния прозорец
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addPromotionModal'));
+        modal.hide();
+        
+        // Изчистване на формата
+        form.reset();
+        
+        // Показване на съобщение за успех
+        showToast('Успех', 'Промоцията е добавена успешно', 'success');
+        
+        // Презареждане на списъка с промоции
+        loadPromotions();
+    } catch (error) {
+        console.error('Error saving promotion:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за редактиране на книга
+async function editBook(bookId) {
+    try {
+        const response = await fetchWithToken(`/api/admin/books/${bookId}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to load book details');
+        }
+        
+        const book = await response.json();
+        
+        // Попълване на формата
+        document.getElementById('bookTitle').value = book.title;
+        document.getElementById('bookOriginalTitle').value = book.original_title || '';
+        document.getElementById('bookPublisher').value = book.publisher || '';
+        document.getElementById('bookTranslator').value = book.translator || '';
+        document.getElementById('bookPages').value = book.pages || '';
+        document.getElementById('bookPrice').value = book.price;
+        document.getElementById('bookCoverType').value = book.cover_type || 'paperback';
+        document.getElementById('bookLanguage').value = book.language || 'Български';
+        document.getElementById('bookWeight').value = book.weight || '';
+        document.getElementById('bookDimensions').value = book.dimensions || '';
+        document.getElementById('bookISBN').value = book.isbn;
+        document.getElementById('bookStock').value = book.stock_count;
+        document.getElementById('bookDescription').value = book.description || '';
+        
+        // Избиране на категориите
+        const categoriesSelect = document.getElementById('bookCategories');
+        if (categoriesSelect) {
+            Array.from(categoriesSelect.options).forEach(option => {
+                option.selected = book.categories.some(cat => cat.id.toString() === option.value);
+            });
+        }
+        
+        // Промяна на заглавието на модалния прозорец
+        document.getElementById('addBookModalLabel').textContent = 'Редактиране на книга';
+        
+        // Добавяне на ID на книгата към формата
+        const form = document.getElementById('addBookForm');
+        form.dataset.bookId = bookId;
+        
+        // Промяна на функционалността на бутона за запазване
+        document.getElementById('saveBookBtn').onclick = () => updateBook(bookId);
+        
+        // Показване на модалния прозорец
+        const modal = new bootstrap.Modal(document.getElementById('addBookModal'));
+        modal.show();
+    } catch (error) {
+        console.error('Error loading book for edit:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за актуализиране на книга
+async function updateBook(bookId) {
+    const form = document.getElementById('addBookForm');
+    if (!form) return;
+    
+    const formData = getFormData(form);
+    
+    try {
+        const response = await fetchWithToken(`/api/admin/books/${bookId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to update book');
+        }
+        
+        const data = await response.json();
+        
+        // Скриване на модалния прозорец
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addBookModal'));
+        modal.hide();
+        
+        // Възстановяване на оригиналното заглавие и функционалност на модалния прозорец
+        document.getElementById('addBookModalLabel').textContent = 'Добавяне на нова книга';
+        document.getElementById('saveBookBtn').onclick = saveBook;
+        
+        // Изчистване на формата
+        form.reset();
+        delete form.dataset.bookId;
+        
+        // Показване на съобщение за успех
+        showToast('Успех', `Книгата "${data.title}" е обновена успешно`, 'success');
+        
+        // Презареждане на списъка с книги
+        loadBooks();
+    } catch (error) {
+        console.error('Error updating book:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за редактиране на категория
+async function editCategory(categoryId) {
+    try {
+        const response = await fetchWithToken(`/api/admin/categories/${categoryId}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to load category details');
+        }
+        
+        const category = await response.json();
+        
+        // Попълване на формата
+        document.getElementById('categoryName').value = category.name;
+        document.getElementById('categoryDescription').value = category.description || '';
+        
+        // Избиране на родителска категория
+        const parentSelect = document.getElementById('categoryParent');
+        if (parentSelect) {
+            const parentId = category.parent_categories.length > 0 ? category.parent_categories[0].id.toString() : '';
+            parentSelect.value = parentId;
+        }
+        
+        // Промяна на заглавието на модалния прозорец
+        document.getElementById('addCategoryModalLabel').textContent = 'Редактиране на категория';
+        
+        // Добавяне на ID на категорията към формата
+        const form = document.getElementById('addCategoryForm');
+        form.dataset.categoryId = categoryId;
+        
+        // Промяна на функционалността на бутона за запазване
+        document.getElementById('saveCategoryBtn').onclick = () => updateCategory(categoryId);
+        
+        // Показване на модалния прозорец
+        const modal = new bootstrap.Modal(document.getElementById('addCategoryModal'));
+        modal.show();
+    } catch (error) {
+        console.error('Error loading category for edit:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за актуализиране на профил
+async function updateProfile() {
+    const form = document.getElementById('updateProfileForm');
+    if (!form) return;
+    
+    const formData = getFormData(form);
+    
+    try {
+        const response = await fetchWithToken('/api/users/me', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to update profile');
+        }
+        
+        // Показване на съобщение за успех
+        showToast('Успех', 'Профилът е обновен успешно', 'success');
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за промяна на парола
+async function changePassword() {
+    const form = document.getElementById('changePasswordForm');
+    if (!form) return;
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+    
+    // Проверка дали паролите съвпадат
+    if (newPassword !== confirmNewPassword) {
+        showToast('Грешка', 'Новата парола и потвърждението не съвпадат', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetchWithToken('/api/users/me/password', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_password: newPassword
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to change password');
+        }
+        
+        // Изчистване на формата
+        form.reset();
+        
+        // Показване на съобщение за успех
+        showToast('Успех', 'Паролата е променена успешно', 'success');
+    } catch (error) {
+        console.error('Error changing password:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за обновяване на настройките на сайта
+async function updateSiteSettings() {
+    const form = document.getElementById('siteSettingsForm');
+    if (!form) return;
+    
+    const formData = getFormData(form);
+    
+    try {
+        const response = await fetchWithToken('/api/admin/settings', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to update site settings');
+        }
+        
+        // Показване на съобщение за успех
+        showToast('Успех', 'Настройките са обновени успешно', 'success');
+    } catch (error) {
+        console.error('Error updating site settings:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за превеждане на статус на поръчка
+function translateStatus(status) {
+    switch(status) {
+        case 'pending': return 'Чакаща';
+        case 'confirmed': return 'Потвърдена';
+        case 'shipped': return 'Изпратена';
+        case 'delivered': return 'Доставена';
+        case 'cancelled': return 'Отказана';
+        default: return status;
+    }
+}
+
+// Функция за превеждане на роля на потребител
+function translateUserRole(role) {
+    switch(role) {
+        case 'admin': return 'Администратор';
+        case 'moderator': return 'Модератор';
+        case 'vip': return 'VIP';
+        case 'user': return 'Потребител';
+        default: return role;
+    }
+}
+
+// Функция за генериране на отчет
+async function generateReport() {
+    const reportType = document.getElementById('reportType').value;
+    const reportPeriod = document.getElementById('reportPeriod').value;
+    const reportFormat = document.getElementById('reportFormat').value;
+    const reportDetails = document.getElementById('reportDetails').value;
+    const includeCharts = document.getElementById('includeCharts').checked;
+    
+    let startDate, endDate;
+    
+    if (reportPeriod === 'custom') {
+        startDate = document.getElementById('startDate').value;
+        endDate = document.getElementById('endDate').value;
+        
+        if (!startDate || !endDate) {
+            showToast('Грешка', 'Моля, изберете начална и крайна дата', 'error');
+            return;
+        }
+    } else {
+        // Изчисляване на периода
+        const now = new Date();
+        endDate = now.toISOString().split('T')[0];
+        
+        switch(reportPeriod) {
+            case 'day':
+                startDate = endDate;
+                break;
+            case 'week':
+                const lastWeek = new Date(now);
+                lastWeek.setDate(now.getDate() - 7);
+                startDate = lastWeek.toISOString().split('T')[0];
+                break;
+            case 'month':
+                const lastMonth = new Date(now);
+                lastMonth.setMonth(now.getMonth() - 1);
+                startDate = lastMonth.toISOString().split('T')[0];
+                break;
+            case 'year':
+                const lastYear = new Date(now);
+                lastYear.setFullYear(now.getFullYear() - 1);
+                startDate = lastYear.toISOString().split('T')[0];
+                break;
+        }
+    }
+    
+    try {
+        // Изграждане на URL за отчета
+        let url = `/api/admin/reports/${reportType}?`;
+        url += `start_date=${startDate}&end_date=${endDate}`;
+        url += `&format=${reportFormat}&details=${reportDetails}`;
+        url += `&include_charts=${includeCharts}`;
+        
+        const response = await fetchWithToken(url);
+        
+        if (!response.ok) {
+            throw new Error('Failed to generate report');
+        }
+        
+        // В зависимост от формата, обработваме отговора
+        if (reportFormat === 'html') {
+            // Показваме HTML отчета в нов прозорец
+            const html = await response.text();
+            const newWindow = window.open();
+            newWindow.document.write(html);
+            newWindow.document.close();
+        } else {
+            // Изтегляме файла (PDF, Excel, CSV)
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `report-${reportType}-${startDate}-to-${endDate}.${reportFormat}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        }
+        
+        // Показване на съобщение за успех
+        showToast('Успех', 'Отчетът е генериран успешно', 'success');
+        
+    } catch (error) {
+        console.error('Error generating report:', error);
+        showToast('Грешка', 'Грешка при генериране на отчета', 'error');
+    }
+}
+
+// Настройка на двуфакторна автентикация
+async function setupTwoFactor() {
+    try {
+        const response = await fetchWithToken('/api/users/me/2fa/setup');
+        
+        if (!response.ok) {
+            throw new Error('Failed to setup two-factor authentication');
+        }
+        
+        const data = await response.json();
+        
+        // Показване на QR код
+        const qrCodeContainer = document.getElementById('qrCodeContainer');
+        qrCodeContainer.innerHTML = `<img src="${data.qr_code}" alt="QR код за двуфакторна автентикация">`;
+        
+        // Добавяне на обработчик за бутона за потвърждение
+        document.getElementById('verifyTwoFactorBtn').onclick = () => {
+            const code = document.getElementById('twoFactorCode').value;
+            verifyTwoFactor(code, data.secret);
+        };
+        
+        // Добавяне на обработчик за бутона за отказ
+        document.getElementById('cancelTwoFactorBtn').onclick = () => {
+            document.getElementById('enable2fa').checked = false;
+            document.getElementById('twoFactorSetup').style.display = 'none';
+        };
+    } catch (error) {
+        console.error('Error setting up two-factor authentication:', error);
+        showToast('Грешка', 'Грешка при настройка на двуфакторна автентикация', 'error');
+        document.getElementById('enable2fa').checked = false;
+    }
+}
+
+// Потвърждение на двуфакторна автентикация
+async function verifyTwoFactor(code, secret) {
+    try {
+        const response = await fetchWithToken('/api/users/me/2fa/verify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: code,
+                secret: secret
+            })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to verify two-factor authentication');
+        }
+        
+        // Скриване на настройките
+        document.getElementById('twoFactorSetup').style.display = 'none';
+        
+        // Показване на съобщение за успех
+        showToast('Успех', 'Двуфакторната автентикация е активирана успешно', 'success');
+    } catch (error) {
+        console.error('Error verifying two-factor authentication:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за преглед на детайли за поръчка
+async function viewOrderDetails(orderId) {
+    try {
+        const orderDetailsContent = document.getElementById('orderDetailsContent');
+        orderDetailsContent.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Зареждане...</span>
+                </div>
+            </div>
+        `;
+        
+        const response = await fetchWithToken(`/api/admin/orders/${orderId}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to load order details');
+        }
+        
+        const order = await response.json();
+        
+        // Форматиране на адреса
+        const address = order.shipping_address;
+        const addressText = `${address.street}, ${address.city}, ${address.country}, ${address.postal_code}`;
+        
+        // Изчисляване на общата сума
+        const subtotal = order.items.reduce((sum, item) => {
+            return sum + item.price_per_item * item.quantity * (1 - item.discount / 100);
+        }, 0);
+        
+        // Показване на информация за поръчката
+        orderDetailsContent.innerHTML = `
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5>Информация за поръчката</h5>
+                    <p><strong>Номер:</strong> ${order.id}</p>
+                    <p><strong>Дата:</strong> ${formatDate(order.created_at)}</p>
+                    <p><strong>Статус:</strong> <span class="badge ${getStatusClass(order.status)}">${translateStatus(order.status)}</span></p></div>
+                <div class="col-md-6">
+                    <h5>Информация за клиента</h5>
+                    <p><strong>Име:</strong> ${order.user_id ? order.user.username : order.temp_user.full_name || 'Гост'}</p>
+                    <p><strong>Имейл:</strong> ${order.user_id ? order.user.email : order.temp_user.email || '-'}</p>
+                    <p><strong>Телефон:</strong> ${order.phone}</p>
+                </div>
+            </div>
+            <div class="row mb-4">
+                <div class="col">
+                    <h5>Адрес за доставка</h5>
+                    <p>${addressText}</p>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Книга</th>
+                            <th>Цена</th>
+                            <th>Количество</th>
+                            <th>Отстъпка</th>
+                            <th>Обща сума</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHTML}
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-end"><strong>Междинна сума:</strong></td>
+                            <td>${formatPrice(subtotal)}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-end"><strong>Доставка:</strong></td>
+                            <td>${formatPrice(order.total_price - subtotal)}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4" class="text-end"><strong>Обща сума:</strong></td>
+                            <td class="fw-bold">${formatPrice(order.total_price)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        `;
+        
+        // Показване/скриване на бутоните според статуса на поръчката
+        const orderActionButtons = document.getElementById('orderActionButtons');
+        orderActionButtons.style.display = 'block';
+        
+        const confirmBtn = document.getElementById('confirmOrderBtn');
+        const shipBtn = document.getElementById('shipOrderBtn');
+        const deliverBtn = document.getElementById('deliverOrderBtn');
+        const cancelBtn = document.getElementById('cancelOrderBtn');
+        
+        // Скриване на всички бутони първоначално
+        confirmBtn.style.display = 'none';
+        shipBtn.style.display = 'none';
+        deliverBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+        
+        // Показване на подходящите бутони според статуса
+        switch(order.status) {
+            case 'pending':
+                confirmBtn.style.display = 'inline-block';
+                cancelBtn.style.display = 'inline-block';
+                break;
+            case 'confirmed':
+                shipBtn.style.display = 'inline-block';
+                cancelBtn.style.display = 'inline-block';
+                break;
+            case 'shipped':
+                deliverBtn.style.display = 'inline-block';
+                break;
+            case 'delivered':
+            case 'cancelled':
+                orderActionButtons.style.display = 'none';
+                break;
+        }
+        
+        // Добавяне на обработчици за бутоните
+        confirmBtn.onclick = () => updateOrderStatus(orderId, 'confirmed');
+        shipBtn.onclick = () => updateOrderStatus(orderId, 'shipped');
+        deliverBtn.onclick = () => updateOrderStatus(orderId, 'delivered');
+        cancelBtn.onclick = () => updateOrderStatus(orderId, 'cancelled');
+        
+    } catch (error) {
+        console.error('Error loading order details:', error);
+        document.getElementById('orderDetailsContent').innerHTML = `
+            <div class="alert alert-danger">
+                Грешка при зареждане на детайлите за поръчката: ${error.message}
+            </div>
+        `;
+    }
+}
+
+// Функция за обновяване на статуса на поръчка
+async function updateOrderStatus(orderId, newStatus) {
+    try {
+        const response = await fetchWithToken(`/api/admin/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to update order status');
+        }
+        
+        // Затваряне на модалния прозорец
+        const modal = bootstrap.Modal.getInstance(document.getElementById('orderDetailsModal'));
+        modal.hide();
+        
+        // Показване на съобщение за успех
+        showToast('Успех', `Статусът на поръчката е променен на "${translateStatus(newStatus)}"`, 'success');
+        
+        // Презареждане на списъка с поръчки
+        loadOrders();
+    } catch (error) {
+        console.error('Error updating order status:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за изтриване на книга
+async function deleteBook(bookId) {
+    showConfirmDialog(
+        'Изтриване на книга',
+        'Сигурни ли сте, че искате да изтриете тази книга? Това действие не може да бъде отменено.',
+        async () => {
+            try {
+                const response = await fetchWithToken(`/api/admin/books/${bookId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to delete book');
+                }
+                
+                // Показване на съобщение за успех
+                showToast('Успех', 'Книгата е изтрита успешно', 'success');
+                
+                // Презареждане на списъка с книги
+                loadBooks();
+            } catch (error) {
+                console.error('Error deleting book:', error);
+                showToast('Грешка', error.message, 'error');
+            }
+        }
+    );
+}
+
+// Функция за изтриване на категория
+async function deleteCategory(categoryId) {
+    showConfirmDialog(
+        'Изтриване на категория',
+        'Сигурни ли сте, че искате да изтриете тази категория? Това действие не може да бъде отменено.',
+        async () => {
+            try {
+                const response = await fetchWithToken(`/api/admin/categories/${categoryId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to delete category');
+                }
+                
+                // Показване на съобщение за успех
+                showToast('Успех', 'Категорията е изтрита успешно', 'success');
+                
+                // Презареждане на списъка с категории
+                loadCategories();
+            } catch (error) {
+                console.error('Error deleting category:', error);
+                showToast('Грешка', error.message, 'error');
+            }
+        }
+    );
+}
+
+// Функция за изтриване на промоция
+async function deletePromotion(promotionId) {
+    showConfirmDialog(
+        'Изтриване на промоция',
+        'Сигурни ли сте, че искате да изтриете тази промоция? Това действие не може да бъде отменено.',
+        async () => {
+            try {
+                const response = await fetchWithToken(`/api/admin/promotions/${promotionId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to delete promotion');
+                }
+                
+                // Показване на съобщение за успех
+                showToast('Успех', 'Промоцията е изтрита успешно', 'success');
+                
+                // Презареждане на списъка с промоции
+                loadPromotions();
+            } catch (error) {
+                console.error('Error deleting promotion:', error);
+                showToast('Грешка', error.message, 'error');
+            }
+        }
+    );
+}
+
+// Функция за редактиране на промоция
+async function editPromotion(promotionId) {
+    try {
+        const response = await fetchWithToken(`/api/admin/promotions/${promotionId}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to load promotion details');
+        }
+        
+        const promotion = await response.json();
+        
+        // Попълване на формата
+        document.getElementById('promotionBook').value = promotion.book_id;
+        document.getElementById('promotionDiscount').value = promotion.discount_percentage;
+        document.getElementById('promotionStartDate').value = formatDateTimeForInput(promotion.start_date);
+        document.getElementById('promotionEndDate').value = formatDateTimeForInput(promotion.end_date);
+        document.getElementById('promotionDescription').value = promotion.description || '';
+        
+        // Промяна на заглавието на модалния прозорец
+        document.getElementById('addPromotionModalLabel').textContent = 'Редактиране на промоция';
+        
+        // Добавяне на ID на промоцията към формата
+        const form = document.getElementById('addPromotionForm');
+        form.dataset.promotionId = promotionId;
+        
+        // Промяна на функционалността на бутона за запазване
+        document.getElementById('savePromotionBtn').onclick = () => updatePromotion(promotionId);
+        
+        // Показване на модалния прозорец
+        const modal = new bootstrap.Modal(document.getElementById('addPromotionModal'));
+        modal.show();
+    } catch (error) {
+        console.error('Error loading promotion for edit:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за актуализиране на промоция
+async function updatePromotion(promotionId) {
+    const form = document.getElementById('addPromotionForm');
+    if (!form) return;
+    
+    const formData = getFormData(form);
+    
+    try {
+        const response = await fetchWithToken(`/api/admin/promotions/${promotionId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to update promotion');
+        }
+        
+        // Скриване на модалния прозорец
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addPromotionModal'));
+        modal.hide();
+        
+        // Възстановяване на оригиналното заглавие и функционалност на модалния прозорец
+        document.getElementById('addPromotionModalLabel').textContent = 'Добавяне на нова промоция';
+        document.getElementById('savePromotionBtn').onclick = savePromotion;
+        
+        // Изчистване на формата
+        form.reset();
+        delete form.dataset.promotionId;
+        
+        // Показване на съобщение за успех
+        showToast('Успех', 'Промоцията е обновена успешно', 'success');
+        
+        // Презареждане на списъка с промоции
+        loadPromotions();
+    } catch (error) {
+        console.error('Error updating promotion:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за актуализиране на категория
+async function updateCategory(categoryId) {
+    const form = document.getElementById('addCategoryForm');
+    if (!form) return;
+    
+    const formData = getFormData(form);
+    
+    try {
+        const response = await fetchWithToken(`/api/admin/categories/${categoryId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to update category');
+        }
+        
+        // Скриване на модалния прозорец
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addCategoryModal'));
+        modal.hide();
+        
+        // Възстановяване на оригиналното заглавие и функционалност на модалния прозорец
+        document.getElementById('addCategoryModalLabel').textContent = 'Добавяне на нова категория';
+        document.getElementById('saveCategoryBtn').onclick = saveCategory;
+        
+        // Изчистване на формата
+        form.reset();
+        delete form.dataset.categoryId;
+        
+        // Показване на съобщение за успех
+        showToast('Успех', 'Категорията е обновена успешно', 'success');
+        
+        // Презареждане на списъка с категории
+        loadCategories();
+    } catch (error) {
+        console.error('Error updating category:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за редактиране на потребител
+async function editUser(userId) {
+    try {
+        const response = await fetchWithToken(`/api/admin/users/${userId}`);
+        
+        if (!response.ok) {
+            throw new Error('Failed to load user details');
+        }
+        
+        const user = await response.json();
+        
+        // Създаване на модален прозорец за редактиране на потребител
+        const modalHTML = `
+            <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editUserModalLabel">Редактиране на потребител</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="editUserForm">
+                                <div class="mb-3">
+                                    <label for="userUsername" class="form-label">Потребителско име</label>
+                                    <input type="text" class="form-control" id="userUsername" name="username" value="${user.username}" readonly>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="userEmail" class="form-label">Имейл</label>
+                                    <input type="email" class="form-control" id="userEmail" name="email" value="${user.email}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="userFullName" class="form-label">Пълно име</label>
+                                    <input type="text" class="form-control" id="userFullName" name="full_name" value="${user.full_name || ''}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="userPhone" class="form-label">Телефон</label>
+                                    <input type="tel" class="form-control" id="userPhone" name="phone" value="${user.phone || ''}">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="userRole" class="form-label">Роля</label>
+                                    <select class="form-select" id="userRole" name="role">
+                                        <option value="user" ${user.role === 'user' ? 'selected' : ''}>Потребител</option>
+                                        <option value="vip" ${user.role === 'vip' ? 'selected' : ''}>VIP</option>
+                                        <option value="moderator" ${user.role === 'moderator' ? 'selected' : ''}>Модератор</option>
+                                        <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Администратор</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="userIsActive" name="is_active" ${user.is_active ? 'checked' : ''}>
+                                    <label class="form-check-label" for="userIsActive">Активен</label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
+                            <button type="button" class="btn btn-primary" id="saveUserBtn">Запази</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Добавяне на модалния прозорец към документа
+        const modalContainer = document.createElement('div');
+        modalContainer.innerHTML = modalHTML;
+        document.body.appendChild(modalContainer);
+        
+        // Показване на модалния прозорец
+        const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+        modal.show();
+        
+        // Добавяне на обработчик за бутона за запазване
+        document.getElementById('saveUserBtn').onclick = () => {
+            updateUser(userId);
+        };
+        
+        // Добавяне на обработчик за затваряне на модалния прозорец
+        document.getElementById('editUserModal').addEventListener('hidden.bs.modal', function () {
+            modalContainer.remove();
+        });
+    } catch (error) {
+        console.error('Error loading user for edit:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за актуализиране на потребител
+async function updateUser(userId) {
+    const form = document.getElementById('editUserForm');
+    if (!form) return;
+    
+    const formData = getFormData(form);
+    formData.is_active = form.is_active.checked;
+    
+    try {
+        const response = await fetchWithToken(`/api/admin/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Failed to update user');
+        }
+        
+        // Скриване на модалния прозорец
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+        modal.hide();
+        
+        // Показване на съобщение за успех
+        showToast('Успех', 'Потребителят е обновен успешно', 'success');
+        
+        // Презареждане на списъка с потребители
+        loadUsers();
+    } catch (error) {
+        console.error('Error updating user:', error);
+        showToast('Грешка', error.message, 'error');
+    }
+}
+
+// Функция за промяна на статуса на потребител
+async function toggleUserStatus(userId, isActive) {
+    const newStatus = !isActive;
+    const actionText = newStatus ? 'активиране' : 'блокиране';
+    
+    showConfirmDialog(
+        `${newStatus ? 'Активиране' : 'Блокиране'} на потребител`,
+        `Сигурни ли сте, че искате да ${actionText === 'активиране' ? 'активирате' : 'блокирате'} този потребител?`,
+        async () => {
+            try {
+                const response = await fetchWithToken(`/api/admin/users/${userId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ is_active: newStatus })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || `Failed to ${actionText} user`);
+                }
+                
+                // Показване на съобщение за успех
+                showToast('Успех', `Потребителят е ${actionText === 'активиране' ? 'активиран' : 'блокиран'} успешно`, 'success');
+                
+                // Презареждане на списъка с потребители
+                loadUsers();
+            } catch (error) {
+                console.error(`Error ${actionText} user:`, error);
+                showToast('Грешка', error.message, 'error');
+            }
+        }
+    );
+}
+
+// Функция за обновяване на селект полетата за категории
+function updateCategorySelects(categories) {
+    // Обновяване на селект полето в модалния прозорец за добавяне на категория
+    const parentCategorySelect = document.getElementById('categoryParent');
+    if (parentCategorySelect) {
+        // Запазване на текущо избраната стойност
+        const selectedValue = parentCategorySelect.value;
+        
+        // Изчистване на съдържанието и добавяне на опция "Няма"
+        parentCategorySelect.innerHTML = '<option value="">Няма</option>';
+        
+        // Добавяне на категориите
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            parentCategorySelect.appendChild(option);
+        });
+        
+        // Възстановяване на избраната стойност
+        if (selectedValue) {
+            parentCategorySelect.value = selectedValue;
+        }
+    }
+}
+
+// Помощна функция за получаване на CSS клас според статуса на поръчка
+function getStatusClass(status) {
+    switch(status) {
+        case 'pending': return 'bg-warning';
+        case 'confirmed': return 'bg-info';
+        case 'shipped': return 'bg-primary';
+        case 'delivered': return 'bg-success';
+        case 'cancelled': return 'bg-danger';
+        default: return 'bg-secondary';
+    }
+}
+
+// Помощна функция за форматиране на дата и час за input полета
+function formatDateTimeForInput(dateString) {
+    const date = new Date(dateString);
+    return date.toISOString().slice(0, 16);
+}
+
+// Добавянето на събитийни слушатели след зареждане на страницата
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализиране на обработчици за формите и бутоните
+    initModalHandlers();
+    
+    // Добавяне на слушател за промяна на периода при отчетите
+    const reportPeriod = document.getElementById('reportPeriod');
+    if (reportPeriod) {
+        reportPeriod.addEventListener('change', function() {
+            const customDateRange = document.getElementById('customDateRange');
+            if (this.value === 'custom') {
+                customDateRange.style.display = 'flex';
+            } else {
+                customDateRange.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

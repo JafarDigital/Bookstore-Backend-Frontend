@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Моят профил - Книжарница{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Лична информация</h5>
+            </div>
+            <div class="card-body">
+                <div id="profileInfo">
+                    <p><strong>Потребителско име:</strong> <span id="profileUsername">Зареждане...</span></p>
+                    <p><strong>Имейл:</strong> <span id="profileEmail">Зареждане...</span></p>
+                    <p><strong>Име:</strong> <span id="profileFullName">Зареждане...</span></p>
+                    <p><strong>Телефон:</strong> <span id="profilePhone">Зареждане...</span></p>
+                </div>
+                <button class="btn btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                    <i class="fas fa-edit me-2"></i>Редактирай
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Настройки на акаунта</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Смяна на парола</h6>
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                        <i class="fas fa-key me-2"></i>Промени паролата
+                    </button>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <h6>Двуфакторна автентикация</h6>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="enableTwoFactorAuth">
+                        <label class="form-check-label" for="enableTwoFactorAuth">Активирай 2FA</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модален прозорец за редактиране на профил -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProfileModalLabel">Редактиране на профил</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="mb-3">
+                        <label for="editFullName" class="form-label">Име</label>
+                        <input type="text" class="form-control" id="editFullName" name="full_name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPhone" class="form-label">Телефон</label>
+                        <input type="tel" class="form-control" id="editPhone" name="phone">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
+                <button type="button" class="btn btn-primary" id="saveProfileBtn">Запази</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модален прозорец за смяна на парола -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePasswordModalLabel">Смяна на парола</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Текуща парола</label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">Нова парола</label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Потвърждение на новата парола</label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отказ</button>
+                <button type="button" class="btn btn-primary" id="changePasswordBtn">Запази</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+		
+		const token = localStorage.getItem('access_token');
+		
+		if (!token) {
+			window.location.href = '/login';
+			return;
+		}
+    
+        // Зареждане на данни за потребителя. Timeout е необходим, иначе връща обратно към /login
+		setTimeout(() => {
+			loadProfileData(); // or loadOrders();
+		}, 500);
+    });
+    
+    // Функция за зареждане на данни за профила
+    function loadProfileData() {
+        if (!currentUser) {
+            window.location.href = '/login';
+            return;
+        }
+        
+        // Попълване на профилната информация
+        document.getElementById('profileUsername').textContent = currentUser.username;
+        document.getElementById('profileEmail').textContent = currentUser.email;
+        document.getElementById('profileFullName').textContent = currentUser.full_name || 'Не е посочено';
+        document.getElementById('profilePhone').textContent = currentUser.phone || 'Не е посочено';
+        
+        // Попълване на формата за редактиране
+        document.getElementById('editFullName').value = currentUser.full_name || '';
+        document.getElementById('editPhone').value = currentUser.phone || '';
+    }
+</script>
+{% endblock %}

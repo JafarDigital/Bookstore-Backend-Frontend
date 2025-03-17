@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} | Книжарница{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <img src="/static/covers/{{ book.id|default('book-placeholder') }}.jpg" class="img-fluid book-cover rounded" alt="{{ book.title }}" onerror="this.src='/static/book-placeholder.png'">
+    </div>
+    <div class="col-md-8">
+        <div class="book-details">
+            <h1 class="mb-3">{{ book.title }}</h1>
+            
+            {% if book.goodreads_rating %}
+            <div class="rating mb-3">
+                {% for i in range(1, 6) %}
+                    {% if i <= book.goodreads_rating|int %}
+                        <i class="fas fa-star"></i>
+                    {% elif i <= book.goodreads_rating|int + 0.5 %}
+                        <i class="fas fa-star-half-alt"></i>
+                    {% else %}
+                        <i class="far fa-star"></i>
+                    {% endif %}
+                {% endfor %}
+                <span class="ms-2">{{ book.goodreads_rating|round(1) }} от Goodreads</span>
+            </div>
+            {% endif %}
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <p><strong>Издател:</strong> {{ book.publisher }}</p>
+                    {% if book.translator %}
+                    <p><strong>Преводач:</strong> {{ book.translator }}</p>
+                    {% endif %}
+                    <p><strong>Език:</strong> {{ book.language }}</p>
+                    <p><strong>ISBN:</strong> {{ book.isbn }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Страници:</strong> {{ book.pages }}</p>
+                    <p><strong>Тип корица:</strong> {{ book.cover_type }}</p>
+                    {% if book.weight %}
+                    <p><strong>Тегло:</strong> {{ book.weight }} г</p>
+                    {% endif %}
+                    {% if book.dimensions %}
+                    <p><strong>Размери:</strong> {{ book.dimensions }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                {% if book.stock_count == 0 %}
+                <div class="book-out-of-stock">
+                    <i class="fas fa-exclamation-circle me-2"></i> Изчерпана
+                </div>
+                {% endif %}
+                
+                {% if promotion %}
+                <div class="book-promotion">
+                    <div class="mb-2"><i class="fas fa-tags me-2"></i> Промоция {{ promotion.discount_percentage }}% до {{ promotion.end_date|date }}</div>
+                    <div class="d-flex align-items-center">
+                        <span class="text-decoration-line-through me-3">{{ book.price }} лв.</span>
+                        <span class="book-price">{{ (book.price * (1 - promotion.discount_percentage / 100))|round(2) }} лв.</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="book-price mb-3">{{ book.price }} лв.</div>
+                {% endif %}
+                
+                <button class="btn btn-primary" onclick="if(!this.dataset.clicked) { this.dataset.clicked='true'; addToCart({{ book.id }}, '{{ book.title }}', {{ book.price }}); setTimeout(() => {delete this.dataset.clicked}, 500); }">
+    <i class="fas fa-shopping-cart me-2"></i>Добави в кошницата
+</button>
+                
+                {% if current_user and current_user.role in ['moderator', 'admin'] %}
+                <a href="/admin/books/{{ book.id }}/edit" class="btn btn-outline-secondary">
+                    <i class="fas fa-edit me-2"></i> Редактирай
+                </a>
+                <button class="btn btn-outline-primary" id="addPromotionBtn">
+                    <i class="fas fa-tag me-2"></i> Добави промоция
+                </button>
+                <button class="btn btn-outline-info" id="updateGoodreadsBtn">
+                    <i class="fas fa-sync me-2"></i> Обнови от Goodreads
+                </button>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4">
+                <h5>Категории</h5>
+                <div>
+                    {% for category in book.categories %}
+                    <a href="/search?category_id={{ category.id }}" class="badge bg-secondary text-decoration-none me-1">{{ category.name }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="bookTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="description-tab" data-bs-toggle="tab" data-bs-target="#description" type="button" role="tab" aria-controls="description" aria-selected="true">Описание</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button" role="tab" aria-controls="reviews" aria-selected="false">Отзиви</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="bookTabsContent">
+                    <div class="tab-pane fade show active" id="description" role="tabpanel" aria-labelledby="description-tab">
+                        <div class="book-description">
+                            {{ book.description|safe }}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                        <div class="mb-4">
+                            <h4>Добави отзив</h4>
+                            {% if current_user %}
+                            <form id="reviewForm">
+                                <div class="mb-3">
+                                    <label for="rating" class="form-label">Оценка:</label>
+                                    <select class="form-select" id="rating" name="rating" required>
+                                        <option value="5">5 звезди - Отлична</option>
+                                        <option value="4">4 звезди - Много добра</option>
+                                        <option value="3">3 звезди - Добра</option>
+                                        <option value="2">2 звезди - Слаба</option>
+                                        <option value="1">1 звезда - Лоша</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">Коментар:</label>
+                                    <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="submitReview(this.form, {{ book.id }})">Публикувай</button>
+                            </form>
+                            {% else %}
+                            <div class="alert alert-info">
+                                <a href="/login">Влезте в профила си</a>, за да добавите отзив.
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <h4>Отзиви от потребители</h4>
+                        {% if book.reviews %}
+                        <div class="reviews-container">
+                            {% for review in book.reviews %}
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h5 class="card-title">{{ review.user.username }}</h5>
+                                        <div class="rating">
+                                            {% for i in range(1, 6) %}
+                                                {% if i <= review.rating %}
+                                                    <i class="fas fa-star"></i>
+                                                {% else %}
+                                                    <i class="far fa-star"></i>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <p class="card-text">{{ review.comment }}</p>
+                                    <small class="text-muted">{{ review.created_at|date }}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-light">
+                            Няма отзиви за тази книга.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if current_user and current_user.role in ['moderator', 'admin'] %}
+<!-- Модален прозорец за добавяне на промоция -->
+<div class="modal fade" id="promotionModal" tabindex="-1" aria-labelledby="promotionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="promotionModalLabel">Добавяне на промоция</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="promotionForm">
+                    <div class="mb-3">
+                        <label for="discount_percentage" class="form-label">Процент отстъпка:</label>
+                        <input type="number" class="form-control" id="discount_percentage" name="discount_percentage" min="1" max="99" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="start_date" class="form-label">Начална дата:</label>
+                        <input type="datetime-local" class="form-control" id="start_date" name="start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="end_date" class="form-label">Крайна дата:</label>
+                        <input type="datetime-local" class="form-control" id="end_date" name="end_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Описание (не е задължително):</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Откажи</button>
+                <button type="button" class="btn btn-primary" id="savePromotionBtn">Запази</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Добавяне на книга в кошницата
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        if (addToCartBtn) {
+            addToCartBtn.addEventListener('click', function() {
+                {% if book.stock_count > 0 %}
+                const bookId = {{ book.id }};
+                const title = "{{ book.title }}";
+                {% if promotion %}
+                const price = {{ book.price * (1 - promotion.discount_percentage / 100) }};
+                {% else %}
+                const price = {{ book.price }};
+                {% endif %}
+                
+                addToCart(bookId, title, price);
+                {% endif %}
+            });
+        }
+        
+        {% if current_user and current_user.role in ['moderator', 'admin'] %}
+        // Инициализация на модалния прозорец за добавяне на промоция
+        const addPromotionBtn = document.getElementById('addPromotionBtn');
+        const savePromotionBtn = document.getElementById('savePromotionBtn');
+        const promotionModal = new bootstrap.Modal(document.getElementById('promotionModal'));
+        
+        if (addPromotionBtn) {
+            addPromotionBtn.addEventListener('click', function() {
+                // Задаваме начална дата (текущата)
+                const now = new Date();
+                const startDateInput = document.getElementById('start_date');
+                startDateInput.value = now.toISOString().slice(0, 16);
+                
+                // Задаваме крайна дата (след 7 дни)
+                const oneWeekLater = new Date();
+                oneWeekLater.setDate(oneWeekLater.getDate() + 7);
+                const endDateInput = document.getElementById('end_date');
+                endDateInput.value = oneWeekLater.toISOString().slice(0, 16);
+                
+                promotionModal.show();
+            });
+        }
+        
+        if (savePromotionBtn) {
+            savePromotionBtn.addEventListener('click', function() {
+                const form = document.getElementById('promotionForm');
+                const formData = new FormData(form);
+                
+                fetchWithToken('/api/books/{{ book.id }}/promotions', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(error => {
+                            throw new Error(error.detail || 'Грешка при създаване на промоция');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    promotionModal.hide();
+                    showToast('Успех', 'Промоцията е добавена успешно', 'success');
+                    setTimeout(() => {
+                        window.location.setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                })
+                .catch(error => {
+                    console.error('Error creating promotion:', error);
+                    showToast('Грешка', error.message, 'error');
+                });
+            });
+        }
+        
+        // Обновяване от Goodreads
+        const updateGoodreadsBtn = document.getElementById('updateGoodreadsBtn');
+        if (updateGoodreadsBtn) {
+            updateGoodreadsBtn.addEventListener('click', function() {
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Обновяване...';
+                
+                fetchWithToken('/api/books/{{ book.id }}/update-goodreads', {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(error => {
+                            throw new Error(error.detail || 'Грешка при обновяване от Goodreads');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        showToast('Успех', 'Информацията е обновена успешно', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        throw new Error(data.message || 'Грешка при обновяване от Goodreads');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating from Goodreads:', error);
+                    showToast('Грешка', error.message, 'error');
+                    
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-sync me-2"></i> Обнови от Goodreads';
+                });
+            });
+        }
+        {% endif %}
+    });
+</script>
+{% endblock %}

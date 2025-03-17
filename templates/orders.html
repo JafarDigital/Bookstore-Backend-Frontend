@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Моите поръчки - Книжарница{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">Моите поръчки</h2>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">История на поръчките</h5>
+            </div>
+            <div class="card-body">
+                <div id="ordersContainer">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Зареждане...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модален прозорец за детайли на поръчка -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDetailsModalLabel">Детайли за поръчка</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="orderDetailsBody">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Зареждане...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Затвори</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+		
+		const token = localStorage.getItem('access_token');
+		if (!token) {
+			window.location.href = '/login';
+			return;
+		}
+        
+        // Зареждане на поръчките
+        setTimeout(() => {
+			loadOrders();
+		}, 500);
+    });
+    
+    // Функция за зареждане на поръчките
+    async function loadOrders() {
+        try {
+            // Симулиране на забавяне
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Пример с данни (в реален проект тук ще е fetch заявка)
+            const ordersData = [
+                {
+                    id: 1024,
+                    date: '17.03.2025',
+                    status: 'pending',
+                    total: 85.90,
+                    items: 3
+                },
+                {
+                    id: 1015,
+                    date: '10.03.2025',
+                    status: 'delivered',
+                    total: 45.50,
+                    items: 2
+                },
+                {
+                    id: 1008,
+                    date: '02.03.2025',
+                    status: 'cancelled',
+                    total: 67.80,
+                    items: 1
+                }
+            ];
+            
+            renderOrders(ordersData);
+        } catch (error) {
+            console.error('Error loading orders:', error);
+            document.getElementById('ordersContainer').innerHTML = `
+                <div class="alert alert-danger">
+                    Грешка при зареждане на поръчките: ${error.message}
+                </div>
+            `;
+        }
+    }
+    
+    // Функция за рендериране на поръчките
+    function renderOrders(orders) {
+        const ordersContainer = document.getElementById('ordersContainer');
+        
+        if (orders.length === 0) {
+            ordersContainer.innerHTML = `
+                <div class="alert alert-info">
+                    Нямате поръчки. <a href="/search">Разгледайте нашите книги</a>.
+                </div>
+            `;
+            return;
+        }
+        
+        let html = `
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Дата</th>
+                            <th>Статус</th>
+                            <th>Брой продукти</th>
+                            <th>Обща сума</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        orders.forEach(order => {
+            let statusClass = '';
+            let statusText = '';
+            
+            switch(order.status) {
+                case 'pending':
+                    statusClass = 'bg-warning text-dark';
+                    statusText = 'Обработва се';
+                    break;
+                case 'confirmed':
+                    statusClass = 'bg-info text-dark';
+                    statusText = 'Потвърдена';
+                    break;
+                case 'shipped':
+                    statusClass = 'bg-primary text-white';
+                    statusText = 'Изпратена';
+                    break;
+                case 'delivered':
+                    statusClass = 'bg-success text-white';
+                    statusText = 'Доставена';
+                    break;
+                case 'cancelled':
+                    statusClass = 'bg-danger text-white';
+                    statusText = 'Отказана';
+                    break;
+            }
+            
+            html += `
+                <tr>
+                    <td>${order.id}</td>
+                    <td>${order.date}</td>
+                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    <td>${order.items}</td>
+                    <td>${formatPrice(order.total)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewOrderDetails(${order.id})">
+                            <i class="fas fa-eye"></i> Детайли
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        ordersContainer.innerHTML = html;
+    }
+    
+    // Функция за показване на детайли за поръчка
+    function viewOrderDetails(orderId) {
+        // Показване на модалния прозорец
+        const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+        modal.show();
+        
+        // Тук ще е логиката за зареждане на детайлите за поръчката
+        // Временно показваме примерни данни
+        setTimeout(() => {
+            document.getElementById('orderDetailsBody').innerHTML = `
+                <div class="mb-4">
+                    <h6>Информация за поръчката</h6>
+                    <p><strong>Номер на поръчка:</strong> ${orderId}</p>
+                    <p><strong>Дата:</strong> 17.03.2025</p>
+                    <p><strong>Статус:</strong> <span class="badge bg-warning text-dark">Обработва се</span></p>
+                </div>
+                
+                <div class="mb-4">
+                    <h6>Продукти</h6>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Заглавие</th>
+                                    <th>Цена</th>
+                                    <th>Количество</th>
+                                    <th>Общо</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Под игото</td>
+                                    <td>19.90 лв.</td>
+                                    <td>1</td>
+                                    <td>19.90 лв.</td>
+                                </tr>
+                                <tr>
+                                    <td>Малкият принц</td>
+                                    <td>15.50 лв.</td>
+                                    <td>2</td>
+                                    <td>31.00 лв.</td>
+                                </tr>
+                                <tr>
+                                    <td>Алиса в страната на чудесата</td>
+                                    <td>18.90 лв.</td>
+                                    <td>1</td>
+                                    <td>18.90 лв.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Адрес за доставка</h6>
+                        <p>Иван Иванов<br>
+                        ул. "Примерна" 123<br>
+                        гр. София, 1000<br>
+                        Телефон: +359 88 888 8888</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Информация за доставка</h6>
+                        <p><strong>Метод на доставка:</strong> Куриер<br>
+                        <strong>Очаквана доставка:</strong> 19.03.2025 - 21.03.2025<br>
+                        <strong>Метод на плащане:</strong> Наложен платеж</p>
+                    </div>
+                </div>
+                
+                <div class="text-end mt-4">
+                    <h5>Обща сума: 69.80 лв.</h5>
+                    <p class="text-muted">Доставка: 5.00 лв.</p>
+                    <h4>Общо с доставка: 74.80 лв.</h4>
+                </div>
+            `;
+        }, 500);
+    }
+</script>
+{% endblock %}
