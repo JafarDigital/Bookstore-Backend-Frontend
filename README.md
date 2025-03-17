@@ -10,22 +10,22 @@ This is a full-stack bookstore application with a FastAPI backend and a frontend
 
 ⭐ Reviews & Ratings: Periodic scraping & rating updates
 
-### 🛒 Cart & Orders: ### Temporary order storage & VIP user roles
+🛒 Cart & Orders: Temporary order storage & VIP user roles
 
-### ⚡ Performance: Redis caching
+⚡ Performance: Redis caching
 
-### 🛠 Admin & Moderator Panel: Role-based access control (RBAC)
+🛠 Admin & Moderator Panel: Role-based access control (RBAC)
 
 
 ## 🏗️ Tech Stack
 
-### Backend: FastAPI, PostgreSQL, Redis, SQLAlchemy
+Backend: FastAPI, PostgreSQL, Redis, SQLAlchemy
 
-### Frontend: HTML, CSS, Jinja2 Templates, JavaScript
+Frontend: HTML, CSS, Jinja2 Templates, JavaScript
 
-### Security: JWT, 2FA, Role-Based Access Control (RBAC)
+Security: JWT, 2FA, Role-Based Access Control (RBAC)
 
-### Deployment: Docker (optional)
+Deployment: Docker (optional)
 
 
 ## Installation & Setup
