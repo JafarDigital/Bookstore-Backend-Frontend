@@ -4,13 +4,13 @@ This is a full-stack bookstore application with a FastAPI backend and a frontend
 
 ## Features
 
-### 🔐 User Authentication: JWT-based login & registration with 2FA
+🔐 User Authentication: JWT-based login & registration with 2FA
 
-### 📚 Book Management: CRUD operations for books with categories
+📚 Book Management: CRUD operations for books with categories
 
-### ⭐ Reviews & Ratings: Periodic scraping & rating updates
+⭐ Reviews & Ratings: Periodic scraping & rating updates
 
-### 🛒 Cart & Orders: Temporary order storage & VIP user roles
+### 🛒 Cart & Orders:### Temporary order storage & VIP user roles
 
 ### ⚡ Performance: Redis caching
 
