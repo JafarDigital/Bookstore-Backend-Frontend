@@ -10,7 +10,7 @@ This is a full-stack bookstore application with a FastAPI backend and a frontend
 
 ⭐ Reviews & Ratings: Periodic scraping & rating updates
 
-### 🛒 Cart & Orders:### Temporary order storage & VIP user roles
+### 🛒 Cart & Orders: ### Temporary order storage & VIP user roles
 
 ### ⚡ Performance: Redis caching
 
